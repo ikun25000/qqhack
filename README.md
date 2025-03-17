@@ -1,6 +1,6 @@
-# **QQHook**
+# **TXHook**
 
-> QQHook原名TXHook，是一个针对QQ协议的抓包工具。
+> TXHook，是一个针对QQ协议的抓包工具。
 > 
 > **由原作者[fuqiuluo](https://github.com/fuqiuluo/)开发开源**，现由[owo233](https://github.com/callng/)修复bug增加功能后开源。
 
