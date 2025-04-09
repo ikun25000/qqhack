@@ -3,12 +3,14 @@ package moe.ore.xposed.hooks
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import moe.ore.xposed.util.XPClassloader.load
+import moe.ore.xposed.util.hookMethod
 import java.lang.reflect.Method
 
 internal class AntiDetection {
 
     fun invoke() {
-        disableNewMSF()
+        // disableNewMSF() // 老是出问题, 用新方案
+        disableSwitch() // 试试新方案
     }
 
     private fun disableNewMSF() {
@@ -40,6 +42,18 @@ internal class AntiDetection {
                 }
             }
             XposedBridge.hookMethod(method, hook)
+        }
+    }
+
+    private fun disableSwitch() {
+        val configClass = load("com.tencent.freesia.UnitedConfig")
+        configClass?.let {
+            it.hookMethod("isSwitchOn")?.after { param ->
+                val tag = param.args[1] as String
+                if (tag == "msf_init_optimize" || tag == "msf_network_service_switch_new") {
+                    param.result = false
+                }
+            }
         }
     }
 }
