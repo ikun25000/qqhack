@@ -43,12 +43,9 @@ class SettingFragment: Fragment() {
                 Dialog.EditTextAlertBuilder(requireContext())
                     .setTitle("输入目标地址")
                     .setTextListener { text ->
-                        if (text.isNullOrBlank()) {
-                            FuckSettingItem.turnSettingSwitch(binding.pushApi, false)
-                            return@setTextListener
-                        }
-                        ConfigPusher[KEY_PUSH_API] = text.toString()
-                        addressText.text = text
+                        val finalText = text?.takeIf { it.isNotBlank() } ?: "192.168.31.63:6779"
+                        ConfigPusher[KEY_PUSH_API] = finalText.toString()
+                        addressText.text = finalText
                         Toast.toast(requireContext(), "Push服务配置成功")
                         FuckSettingItem.turnSettingSwitch(binding.pushApi, true)
                     }
