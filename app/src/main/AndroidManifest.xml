@@ -63,7 +63,7 @@
             android:value="this module may have been chasing its love all its life." />
         <meta-data
             android:name="xposedminversion"
-            android:value="93" />
+            android:value="51" />
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposed_scope" />
