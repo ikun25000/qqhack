@@ -6,16 +6,14 @@ import moe.ore.xposed.util.XPClassloader.load
 import moe.ore.xposed.util.hookMethod
 import java.lang.reflect.Method
 
-internal class AntiDetection {
+internal object AntiDetection {
 
-    fun invoke() {
-        // disableNewMSF() // 老是出问题, 用新方案
-        disableSwitch() // 试试新方案
+    operator fun invoke() {
+        disableSwitch()
     }
 
     private fun disableNewMSF() {
         val primaryClass = load("com.tencent.mobileqq.msf.core.f0.b")
-        // 暂时这样写，后续可能会改用dexKit来查找
         val fallbackClass = load("com.tencent.mobileqq.msf.core.g0.b")
         val msfCoreClass = load("com.tencent.mobileqq.msf.core.MsfCore")
         var targetMethod: Method? = null

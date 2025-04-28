@@ -133,7 +133,7 @@ internal class HookEntry: IXposedHookLoadPackage {
             } else return
 
             if (processName.endsWith(":MSF")) {
-                AntiDetection().invoke()
+                AntiDetection()
                 MainHook(source, ctx)
                 sec_static_stage_inited = true
             }

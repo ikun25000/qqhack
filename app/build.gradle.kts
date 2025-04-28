@@ -15,8 +15,8 @@ android {
         minSdk = 23
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 29
-        versionCode = 25040918
-        versionName = "3.0.2"
+        versionCode = 25042821
+        versionName = "3.0.3"
     }
 
     compileOptions {
