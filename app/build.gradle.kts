@@ -15,8 +15,8 @@ android {
         minSdk = 23
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 29
-        versionCode = 25042821
-        versionName = "3.0.3"
+        versionCode = 25050419
+        versionName = "3.0.4"
         ndk {
             //noinspection ChromeOsAbiSupport
             abiFilters += setOf("arm64-v8a")
