@@ -1,6 +1,6 @@
 package moe.ore.xposed.util;
 
-import static moe.ore.xposed.helper.ConfigPusher.KEY_PUSH_API;
+import static moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -8,23 +8,18 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-
 import androidx.annotation.OptIn;
-
 import com.google.gson.JsonObject;
-
 import org.jetbrains.annotations.NotNull;
-
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-
 import kotlinx.serialization.ExperimentalSerializationApi;
 import moe.ore.android.util.HttpUtil;
 import moe.ore.script.Consist;
 import moe.ore.txhook.app.CatchProvider;
 import moe.ore.txhook.helper.HexUtil;
 import moe.ore.txhook.helper.KotlinExtKt;
-import moe.ore.xposed.helper.ConfigPusher;
+import moe.ore.xposed.helper.MMKVConfigManager;
 
 public final class HookUtil {
     public static WeakReference<Context> contextWeakReference;
@@ -94,20 +89,24 @@ public final class HookUtil {
 
     @OptIn(markerClass = ExperimentalSerializationApi.class)
     public static String getApiUrl() {
-        String url = ConfigPusher.INSTANCE.get(KEY_PUSH_API);
+        String url = MMKVConfigManager.INSTANCE.get(KEY_PUSH_API);
         if (contentResolver!= null) {
-            Cursor cursor = contentResolver.query(URI_GET_TXHOOK_STATE, null, KEY_PUSH_API, null, null);
-            if (cursor!= null) {
-                try {
-                    Bundle extras = cursor.getExtras();
-                    if (extras!= null) {
-                        url = extras.getString(KEY_PUSH_API);
+            try {
+                Cursor cursor = contentResolver.query(URI_GET_TXHOOK_STATE, null, KEY_PUSH_API, null, null);
+                if (cursor!= null) {
+                    try {
+                        Bundle extras = cursor.getExtras();
+                        if (extras!= null) {
+                            url = extras.getString(KEY_PUSH_API);
+                        }
+                    } catch (Exception ignored) {
+
+                    } finally {
+                        cursor.close();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    cursor.close();
                 }
+            } catch (Exception ignored) {
+
             }
         }
         return url;

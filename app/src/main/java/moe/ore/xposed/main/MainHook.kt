@@ -3,13 +3,8 @@
 
 package moe.ore.xposed.main
 
-import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Environment
-import androidx.core.app.ActivityCompat
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import de.robv.android.xposed.XC_MethodHook
@@ -17,7 +12,6 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedBridge.log
 import de.robv.android.xposed.XposedHelpers
 import kotlinx.serialization.ExperimentalSerializationApi
-import moe.ore.android.AndroKtx
 import moe.ore.txhook.app.CatchProvider
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.hex2ByteArray
@@ -26,12 +20,12 @@ import moe.ore.xposed.util.GlobalData
 import moe.ore.xposed.util.HookUtil
 import moe.ore.xposed.util.XPClassloader.load
 import moe.ore.xposed.util.hookMethod
-import java.io.File
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
+import androidx.core.net.toUri
 
 object MainHook {
-    private val defaultUri = Uri.parse("content://${CatchProvider.MY_URI}")
+    private val defaultUri = "content://${CatchProvider.MY_URI}".toUri()
     private var isInit: Boolean = false
     private var source = 0
     private val global = GlobalData()
@@ -46,7 +40,6 @@ object MainHook {
         HookUtil.contextWeakReference = WeakReference(ctx)
         this.source = source
 
-        if (!isInit) checkPermissions(ctx)
         CodecWarpper.hookMethod("init")?.before {
             if (it.args.size >= 2) {
                 it.args[1] = true // 强制打开调试模式
@@ -66,35 +59,6 @@ object MainHook {
         hookReceData()
         hookBDH()
         hookParams()
-    }
-
-    private var has_permision = false
-
-    private fun hasStorePermission(ctx: Context): Boolean {
-        if (has_permision) return true
-        has_permision = ActivityCompat.checkSelfPermission(ctx, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(ctx, android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-        return has_permision
-    }
-
-    private fun requestStorePermission(ctx: Context) {
-        kotlin.runCatching {
-            ActivityCompat.requestPermissions(ctx as Activity, arrayOf(
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            ), 0)
-        }.onFailure {
-            log(it)
-        }
-    }
-
-    private fun checkPermissions(ctx: Context) {
-        if (!hasStorePermission(ctx)) {
-            // Toast.toast(ctx, "TXHook需要储存权限才可以运行，请授权对应权限。")
-            if (ctx is Activity) {
-                requestStorePermission(ctx)
-            }
-        }
     }
 
     private fun hookBDH() {

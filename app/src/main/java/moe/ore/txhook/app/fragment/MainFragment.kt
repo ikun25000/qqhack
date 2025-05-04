@@ -21,8 +21,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
-import moe.ore.android.AndroKtx
-import moe.ore.android.dialog.Dialog
 import moe.ore.android.toast.Toast
 import moe.ore.protocol.SSOLoginMerge
 import moe.ore.script.Consist
@@ -41,7 +39,7 @@ import moe.ore.txhook.forEachL
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.FormatUtil
 import moe.ore.txhook.helper.ZipUtil
-import moe.ore.xposed.helper.ConfigPusher
+import moe.ore.xposed.helper.MMKVConfigManager
 import moe.ore.xposed.helper.entries.SavedToken
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -142,8 +140,8 @@ class MainFragment: Fragment() {
             }
 
             override fun handleCPublic(bytes: ByteArray, source: Int) {
-                ConfigPusher.setData(ConfigPusher.KEY_DATA_PUBLIC, ProtoBuf.encodeToByteArray(
-                    ConfigPusher.getData(ConfigPusher.KEY_DATA_PUBLIC).let {
+                MMKVConfigManager.setData(MMKVConfigManager.KEY_DATA_PUBLIC, ProtoBuf.encodeToByteArray(
+                    MMKVConfigManager.getData(MMKVConfigManager.KEY_DATA_PUBLIC).let {
                         if (it != null) ProtoBuf.decodeFromByteArray(it) else SavedToken()
                     }.also {
                         it[source].token = bytes
@@ -152,8 +150,8 @@ class MainFragment: Fragment() {
             }
 
             override fun handleGShare(bytes: ByteArray, source: Int) {
-                ConfigPusher.setData(ConfigPusher.KEY_DATA_SHARE, ProtoBuf.encodeToByteArray(
-                    ConfigPusher.getData(ConfigPusher.KEY_DATA_SHARE).let {
+                MMKVConfigManager.setData(MMKVConfigManager.KEY_DATA_SHARE, ProtoBuf.encodeToByteArray(
+                    MMKVConfigManager.getData(MMKVConfigManager.KEY_DATA_SHARE).let {
                         if (it != null) ProtoBuf.decodeFromByteArray(it) else SavedToken()
                     }.also {
                         it[source].token = bytes
@@ -499,5 +497,3 @@ class MainFragment: Fragment() {
         }
     }
 }
-
-

@@ -3,8 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:label="TXHook"
@@ -60,10 +58,10 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="this module may have been chasing its love all its life." />
+            android:value="I’m QQ，每一天，乐在沟通。" />
         <meta-data
             android:name="xposedminversion"
-            android:value="51" />
+            android:value="53" />
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposed_scope" />

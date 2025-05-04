@@ -19,8 +19,8 @@ import moe.ore.script.Consist.GET_TXHOOK_STATE
 import moe.ore.script.Consist.GET_TXHOOK_WS_STATE
 import moe.ore.txhook.app.fragment.MainFragment
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
-import moe.ore.xposed.helper.ConfigPusher
-import moe.ore.xposed.helper.ConfigPusher.KEY_PUSH_API
+import moe.ore.xposed.helper.MMKVConfigManager
+import moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API
 
 class CatchProvider: ContentProvider() {
     private lateinit var matcher: UriMatcher
@@ -44,7 +44,7 @@ class CatchProvider: ContentProvider() {
         when(selection) {
             KEY_PUSH_API -> {
                 return FakeCursor().apply {
-                    put(KEY_PUSH_API, ConfigPusher[KEY_PUSH_API] ?: "")
+                    put(KEY_PUSH_API, MMKVConfigManager[KEY_PUSH_API] ?: "")
                 }
             }
         }
@@ -66,7 +66,7 @@ class CatchProvider: ContentProvider() {
                     value.getAsInteger("source"),
                     value.get("data") as ByteArray? ?: EMPTY_BYTE_ARRAY,
                     value.get("result") as ByteArray? ?: EMPTY_BYTE_ARRAY,
-                    )
+                )
                 "tlv.get_buf" -> handler.handleTlvGet(
                     value.getAsInteger("version"),
                     value.get("data") as ByteArray? ?: EMPTY_BYTE_ARRAY,

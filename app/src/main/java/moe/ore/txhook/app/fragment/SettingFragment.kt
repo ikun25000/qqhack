@@ -6,13 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
-import com.czm.settingview.SettingView
 import moe.ore.android.dialog.Dialog
 import moe.ore.android.toast.Toast
 import moe.ore.android.util.FuckSettingItem
 import moe.ore.txhook.databinding.FragmentSettingBinding
 import moe.ore.xposed.helper.MMKVConfigManager
-import moe.ore.xposed.helper.MMKVConfigManager.KEY_FORBID_HTTP
 import moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API
 
 class SettingFragment: Fragment() {
@@ -56,28 +54,9 @@ class SettingFragment: Fragment() {
                     .show()
             } else {
                 addressText.text = "未配置服务"
-                        MMKVConfigManager[KEY_PUSH_API] = ""
+                MMKVConfigManager[KEY_PUSH_API] = ""
                 Toast.toast(requireContext(), "Push服务已关闭")
             }
-        }
-
-        binding.forbidTcp.let {
-            it.setmOnLSettingItemClick(object: SwitchSettingListener(it, MMKVConfigManager[KEY_FORBID_HTTP] == "yes", true) {
-                override fun onClick(isChecked: Boolean) {
-                    MMKVConfigManager[KEY_FORBID_HTTP] = if (isChecked) "yes" else "no"
-                }
-            })
-        }
-    }
-
-    abstract class SwitchSettingListener(view: SettingView, value: Boolean = false, private val needRe: Boolean = false): SettingView.OnLSettingItemClick {
-        // init { if (value) view.clickOn() }
-
-        abstract fun onClick(isChecked: Boolean)
-
-        override fun click(isChecked: Boolean) {
-            this.onClick(isChecked)
-            if (needRe) Toast.toast(msg = "需要重新启动QQ后生效")
         }
     }
 }
