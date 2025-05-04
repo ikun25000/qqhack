@@ -26,8 +26,6 @@ class CatchProvider: ContentProvider() {
     private lateinit var matcher: UriMatcher
 
     override fun onCreate(): Boolean {
-        context?.let { AndroKtx.init(it) }
-
         matcher = UriMatcher(NO_MATCH)
         matcher.addURI(MY_URI, GET_TEST_DATA, 1)
         matcher.addURI(MY_URI, GET_TXHOOK_STATE, 2)

@@ -22,12 +22,10 @@ import moe.ore.txhook.app.ui.info.OnItemClickListener
 import moe.ore.txhook.databinding.FragmentHexBinding
 import moe.ore.txhook.databinding.FragmentPacketInfoBinding
 import moe.ore.txhook.databinding.FragmentParserBinding
-import moe.ore.txhook.helper.hashCode
 import moe.ore.txhook.helper.parser.ProtobufParser
 import moe.ore.txhook.helper.parser.TarsParser
 import moe.ore.txhook.helper.toByteReadPacket
 import moe.ore.txhook.helper.toHexString
-import moe.ore.xposed.helper.SourceFinder
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.concurrent.thread
@@ -126,14 +124,6 @@ class PacketInfoFragment: Fragment() {
             var hash = packet.hash
             if (packet.hash == 0) {
                 hash = packet.buffer.contentHashCode()
-            }
-            var find = SourceFinder.find(hash)
-            if (find == null) {
-                hash = packet.buffer.hashCode(4)
-                find = SourceFinder.find(hash)
-            }
-            if (find != null) {
-                plusInfo.item("组包来源", find)
             }
             packet.hash = hash
         }
@@ -234,7 +224,7 @@ class ParserFragment: Fragment() {
                 }.also { uiHandler.post {
                     it.onFailure {
                         it.printStackTrace()
-                        Toast.toast(context, "Pb分析失败: ")
+                        Toast.toast(context, "Pb分析失败")
                     }.onSuccess {
                         Toast.toast(context, "Pb分析成功")
                         parser.bindJson(it)

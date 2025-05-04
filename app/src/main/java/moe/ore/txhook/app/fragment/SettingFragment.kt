@@ -11,12 +11,9 @@ import moe.ore.android.dialog.Dialog
 import moe.ore.android.toast.Toast
 import moe.ore.android.util.FuckSettingItem
 import moe.ore.txhook.databinding.FragmentSettingBinding
-import moe.ore.xposed.helper.ConfigPusher
-import moe.ore.xposed.helper.ConfigPusher.KEY_FORBID_HTTP
-import moe.ore.xposed.helper.ConfigPusher.KEY_PUSH_API
-import moe.ore.xposed.helper.DataKind
-import moe.ore.xposed.helper.DataPutter
-import moe.ore.xposed.helper.SourceFinder
+import moe.ore.xposed.helper.MMKVConfigManager
+import moe.ore.xposed.helper.MMKVConfigManager.KEY_FORBID_HTTP
+import moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API
 
 class SettingFragment: Fragment() {
     private lateinit var binding: FragmentSettingBinding
@@ -33,10 +30,10 @@ class SettingFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val addressText = binding.address
-        addressText.text = ConfigPusher[KEY_PUSH_API].orEmpty().ifBlank { "未配置地址" }
+        addressText.text = MMKVConfigManager[KEY_PUSH_API].orEmpty().ifBlank { "未配置地址" }
 
         FuckSettingItem.setSwitchListener(binding.pushApi.also {
-            if (ConfigPusher[KEY_PUSH_API].orEmpty().isNotEmpty())
+            if (MMKVConfigManager[KEY_PUSH_API].orEmpty().isNotEmpty())
                 FuckSettingItem.turnSettingSwitch(it, true)
         }) {
             if ((it as SwitchCompat).isChecked) {
@@ -44,7 +41,7 @@ class SettingFragment: Fragment() {
                     .setTitle("输入目标地址")
                     .setTextListener { text ->
                         val finalText = text?.takeIf { it.isNotBlank() } ?: "192.168.31.63:6779"
-                        ConfigPusher[KEY_PUSH_API] = finalText.toString()
+                        MMKVConfigManager[KEY_PUSH_API] = finalText.toString()
                         addressText.text = finalText
                         Toast.toast(requireContext(), "Push服务配置成功")
                         FuckSettingItem.turnSettingSwitch(binding.pushApi, true)
@@ -59,29 +56,17 @@ class SettingFragment: Fragment() {
                     .show()
             } else {
                 addressText.text = "未配置服务"
-                ConfigPusher[KEY_PUSH_API] = ""
+                        MMKVConfigManager[KEY_PUSH_API] = ""
                 Toast.toast(requireContext(), "Push服务已关闭")
             }
         }
 
         binding.forbidTcp.let {
-            it.setmOnLSettingItemClick(object: SwitchSettingListener(it, ConfigPusher[KEY_FORBID_HTTP] == "yes", true) {
+            it.setmOnLSettingItemClick(object: SwitchSettingListener(it, MMKVConfigManager[KEY_FORBID_HTTP] == "yes", true) {
                 override fun onClick(isChecked: Boolean) {
-                    ConfigPusher[KEY_FORBID_HTTP] = if (isChecked) "yes" else "no"
+                    MMKVConfigManager[KEY_FORBID_HTTP] = if (isChecked) "yes" else "no"
                 }
             })
-        }
-
-        binding.claerCache.let {
-            it.setmOnLSettingItemClick {
-                DataPutter.clear(DataKind.ECDH_PUBLIC)
-                DataPutter.clear(DataKind.ECDH_SHARE)
-                DataPutter.clear(DataKind.QLOG)
-                DataPutter.clear(DataKind.WTLOGIN_LOG)
-                DataPutter.clear(DataKind.MATCH_PACKAGE)
-                SourceFinder.clear()
-                Toast.toast(msg = "清理成功")
-            }
         }
     }
 

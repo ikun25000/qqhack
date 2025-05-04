@@ -17,6 +17,10 @@ android {
         targetSdk = 29
         versionCode = 25042821
         versionName = "3.0.3"
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters += setOf("arm64-v8a")
+        }
     }
 
     compileOptions {
@@ -110,6 +114,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-io-jvm:0.1.16")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.8.1")
     implementation(files("libs/protobuf-java-3.5.1.jar"))
+    implementation("com.tencent:mmkv:2.1.0")
 
     // UI交互的库
     implementation("com.rengwuxian.materialedittext:library:2.1.4")

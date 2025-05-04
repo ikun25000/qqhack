@@ -39,10 +39,9 @@ import moe.ore.txhook.databinding.FragmentMainBinding
 import moe.ore.txhook.databinding.ListElemBinding
 import moe.ore.txhook.forEachL
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
-import moe.ore.txhook.helper.FileUtil
+import moe.ore.txhook.helper.FormatUtil
 import moe.ore.txhook.helper.ZipUtil
 import moe.ore.xposed.helper.ConfigPusher
-import moe.ore.xposed.helper.IgnoreCmd
 import moe.ore.xposed.helper.entries.SavedToken
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -193,7 +192,7 @@ class MainFragment: Fragment() {
                         else -> "未知行为"
                     }
                     binding.seq.visibility = GONE
-                    binding.size.text = FileUtil.fileSizeToString(it.buffer.size.toLong())
+                    binding.size.text = FormatUtil.formatFileSize(it.buffer.size.toLong())
 
                     binding.time.text = dateToString(Date(it.time), "HH:mm:ss")
                     binding.uin.text = "unknown"
@@ -237,7 +236,7 @@ class MainFragment: Fragment() {
 
                     binding.cmd.text = it.cmd.let { if (it.length <= 25) it else it.substring(0, 25) + "..." }
                     binding.seq.text = it.seq.toString()
-                    binding.size.text = FileUtil.fileSizeToString(it.buffer.size.toLong())
+                    binding.size.text = FormatUtil.formatFileSize(it.buffer.size.toLong())
 
                     binding.time.text = dateToString(Date(it.time), "HH:mm:ss")
                     binding.uin.text = it.uin.toString()
@@ -314,41 +313,6 @@ class MainFragment: Fragment() {
                     startActivity(intent)
                 }
             }
-        }
-        listView.setOnItemLongClickListener { _, _, position, id ->
-            Dialog.ListAlertBuilder(requireContext())
-                .setTitle("选择功能")
-                .addItem("从列表删除") { dialog, _, _ ->
-                    dialog.dismiss()
-                    remove(position)
-                    Toast.toast(context, "删除成功")
-                }
-                .also {
-                    if (inMode == 0) {
-                        it.addItem("忽略该包") { dialog, _, _ ->
-                            dialog.dismiss()
-                            val packet = catchList[position]
-                            Dialog.CommonAlertBuilder(requireContext())
-                                .setTitle("忽略警告")
-                                .setMessage("确定要忽略名字为${packet.cmd}的所有包吗？解除忽略需要在${AndroKtx.dataDir}/ignore.txt删除对应cmd！）")
-                                .setPositiveButton("确定") { d2, _ ->
-                                    d2.dismiss()
-                                    IgnoreCmd.appendIgnore(packet.cmd)
-                                    removeByName(packet.cmd)
-                                    Toast.toast(requireContext(), "无视[${packet.cmd}]成功")
-                                }
-                                .setNegativeButton("取消") { d2, _ ->
-                                    d2.dismiss()
-                                }
-                                .show()
-                        }
-                    }
-                }
-                .addItem("保存到储存", null)
-                .addItem("分享到外部", null)
-                .show()
-
-            return@setOnItemLongClickListener true
         }
     }
 

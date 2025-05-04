@@ -22,7 +22,6 @@ import moe.ore.txhook.app.CatchProvider
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.hex2ByteArray
 import moe.ore.txhook.helper.toHexString
-import moe.ore.xposed.helper.IgnoreCmd.isIgnore
 import moe.ore.xposed.util.GlobalData
 import moe.ore.xposed.util.HookUtil
 import moe.ore.xposed.util.XPClassloader.load
@@ -43,10 +42,8 @@ object MainHook {
     private val HighwaySessionData = load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
 
     operator fun invoke(source: Int, ctx: Context) {
-        AndroKtx.dataDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).absolutePath + File.separator + "txhook"
         HookUtil.contentResolver = ctx.contentResolver
         HookUtil.contextWeakReference = WeakReference(ctx)
-        // log("TXHook数据目录：" + AndroKtx.dataDir)
         this.source = source
 
         if (!isInit) checkPermissions(ctx)
@@ -426,91 +423,86 @@ object MainHook {
                     val cmd = args[5] as String
                     // -- qimei [15] imei [2] version [4]
 
-                    if (!isIgnore(cmd)) {
-                        val result = param.result as ByteArray
-                        val msgCookie = args[6] as? ByteArray
-                        val uin = args[9] as String
-                        val buffer = args[15] as ByteArray
-                        val util = ContentValues()
+                    val result = param.result as ByteArray
+                    val msgCookie = args[6] as? ByteArray
+                    val uin = args[9] as String
+                    val buffer = args[15] as ByteArray
+                    val util = ContentValues()
 
-                        util.put("uin", uin)
-                        util.put("seq", seq)
+                    util.put("uin", uin)
+                    util.put("seq", seq)
 
-                        util.put("cmd", cmd)
-                        util.put("type", "unknown")
-                        util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
-                        util.put("buffer", buffer)
-                        util.put("result", result)
-                        util.put("mode", "send")
+                    util.put("cmd", cmd)
+                    util.put("type", "unknown")
+                    util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
+                    util.put("buffer", buffer)
+                    util.put("result", result)
+                    util.put("mode", "send")
 
-                        HookUtil.sendTo(defaultUri, util, source)
-                    }
+                    HookUtil.sendTo(defaultUri, util, source)
                 }
                 14 -> {
                     val seq = args[0] as Int
                     val cmd = args[5] as String
-                    if (!isIgnore(cmd)) {
-                        val result = param.result as ByteArray
-                        val msgCookie = args[6] as? ByteArray
-                        val uin = args[9] as String
-                        val buffer = args[12] as ByteArray
 
-                        val util = ContentValues()
-                        util.put("uin", uin)
-                        util.put("seq", seq)
-                        util.put("cmd", cmd)
-                        util.put("type", "unknown")
-                        util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
-                        util.put("buffer", buffer)
-                        util.put("result", result)
-                        util.put("mode", "send")
+                    val result = param.result as ByteArray
+                    val msgCookie = args[6] as? ByteArray
+                    val uin = args[9] as String
+                    val buffer = args[12] as ByteArray
 
-                        HookUtil.sendTo(defaultUri, util, source)
-                    }
+                    val util = ContentValues()
+                    util.put("uin", uin)
+                    util.put("seq", seq)
+                    util.put("cmd", cmd)
+                    util.put("type", "unknown")
+                    util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
+                    util.put("buffer", buffer)
+                    util.put("result", result)
+                    util.put("mode", "send")
+
+                    HookUtil.sendTo(defaultUri, util, source)
                 }
                 16 -> {
                     val seq = args[0] as Int
                     val cmd = args[5] as String
-                    if (!isIgnore(cmd)) {
-                        val result = param.result as ByteArray
-                        val msgCookie = args[6] as? ByteArray
-                        val uin = args[9] as String
-                        val buffer = args[14] as ByteArray
-                        // -- qimei [15] imei [2] version [4]
 
-                        val util = ContentValues()
-                        util.put("uin", uin)
-                        util.put("seq", seq)
-                        util.put("cmd", cmd)
-                        util.put("type", "unknown")
-                        util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
-                        util.put("buffer", buffer)
-                        util.put("result", result)
-                        util.put("mode", "send")
+                    val result = param.result as ByteArray
+                    val msgCookie = args[6] as? ByteArray
+                    val uin = args[9] as String
+                    val buffer = args[14] as ByteArray
+                    // -- qimei [15] imei [2] version [4]
 
-                        HookUtil.sendTo(defaultUri, util, source)
-                    }
+                    val util = ContentValues()
+                    util.put("uin", uin)
+                    util.put("seq", seq)
+                    util.put("cmd", cmd)
+                    util.put("type", "unknown")
+                    util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
+                    util.put("buffer", buffer)
+                    util.put("result", result)
+                    util.put("mode", "send")
+
+                    HookUtil.sendTo(defaultUri, util, source)
                 }
                 15 -> {
                     val seq = args[0] as Int
                     val cmd = args[5] as String
-                    if (!isIgnore(cmd)) {
-                        val result = param.result as ByteArray
-                        val msgCookie = args[6] as? ByteArray
-                        val uin = args[9] as String
-                        val buffer = args[13] as ByteArray
-                        val util = ContentValues()
-                        util.put("uin", uin)
-                        util.put("seq", seq)
-                        util.put("cmd", cmd)
-                        util.put("type", "unknown")
-                        util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
-                        util.put("buffer", buffer)
-                        util.put("result", result)
-                        util.put("mode", "send")
 
-                        HookUtil.sendTo(defaultUri, util, source)
-                    }
+                    val result = param.result as ByteArray
+                    val msgCookie = args[6] as? ByteArray
+                    val uin = args[9] as String
+                    val buffer = args[13] as ByteArray
+                    val util = ContentValues()
+                    util.put("uin", uin)
+                    util.put("seq", seq)
+                    util.put("cmd", cmd)
+                    util.put("type", "unknown")
+                    util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
+                    util.put("buffer", buffer)
+                    util.put("result", result)
+                    util.put("mode", "send")
+
+                    HookUtil.sendTo(defaultUri, util, source)
                 }
                 else -> {
                     log("[TXHook] encodeRequest 不知道hook到了个不知道什么东西")
@@ -525,24 +517,23 @@ object MainHook {
             // ssoSeq serviceCmd msgCookie uin wupBuffer
             val seq = HookUtil.invokeFromObjectMethod(from, "getRequestSsoSeq") as Int
             val cmd = HookUtil.invokeFromObjectMethod(from, "getServiceCmd") as String
-            if (!isIgnore(cmd)) {
-                val msgCookie = HookUtil.invokeFromObjectMethod(from, "getMsgCookie") as? ByteArray
-                val uin = HookUtil.invokeFromObjectMethod(from, "getUin") as String
-                val buffer = HookUtil.invokeFromObjectMethod(from, "getWupBuffer") as ByteArray
-                // -- qimei [15] imei [2] version [4]
 
-                val util = ContentValues()
-                util.put("uin", uin)
-                util.put("seq", seq)
-                util.put("cmd", cmd)
-                util.put("type", "unknown")
-                util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
-                util.put("buffer", buffer)
+            val msgCookie = HookUtil.invokeFromObjectMethod(from, "getMsgCookie") as? ByteArray
+            val uin = HookUtil.invokeFromObjectMethod(from, "getUin") as String
+            val buffer = HookUtil.invokeFromObjectMethod(from, "getWupBuffer") as ByteArray
+            // -- qimei [15] imei [2] version [4]
 
-                util.put("mode", "receive")
+            val util = ContentValues()
+            util.put("uin", uin)
+            util.put("seq", seq)
+            util.put("cmd", cmd)
+            util.put("type", "unknown")
+            util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
+            util.put("buffer", buffer)
 
-                HookUtil.sendTo(defaultUri, util, source)
-            }
+            util.put("mode", "receive")
+
+            HookUtil.sendTo(defaultUri, util, source)
         }
     }
 }
