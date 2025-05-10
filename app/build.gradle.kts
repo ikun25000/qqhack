@@ -52,12 +52,6 @@ android {
         }
     }
 
-    sourceSets {
-        named("main") {
-            jniLibs.setSrcDirs(listOf("libs"))
-        }
-    }
-
     configureAppSigningConfigsForRelease(project)
 }
 
@@ -107,11 +101,11 @@ dependencies {
 
     // 数据处理的库
     implementation("com.google.code.gson:gson:2.13.1")
+    implementation("com.google.protobuf:protobuf-java:4.30.2")
+    implementation("com.tencent:mmkv:2.2.2")
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
     implementation("org.jetbrains.kotlinx:kotlinx-io-jvm:0.1.16")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.8.1")
-    implementation(files("libs/protobuf-java-3.5.1.jar"))
-    implementation("com.tencent:mmkv:2.2.2")
 
     // UI交互的库
     implementation("com.rengwuxian.materialedittext:library:2.1.4")

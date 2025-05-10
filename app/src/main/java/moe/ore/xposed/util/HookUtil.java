@@ -8,11 +8,16 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+
 import androidx.annotation.OptIn;
+
 import com.google.gson.JsonObject;
+
 import org.jetbrains.annotations.NotNull;
+
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+
 import kotlinx.serialization.ExperimentalSerializationApi;
 import moe.ore.android.util.HttpUtil;
 import moe.ore.script.Consist;

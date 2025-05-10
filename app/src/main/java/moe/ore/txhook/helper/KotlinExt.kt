@@ -22,7 +22,8 @@
 package moe.ore.txhook.helper
 
 import java.io.Closeable
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract

@@ -1,7 +1,7 @@
 package moe.ore.xposed.helper
 
-import com.tencent.mmkv.MMKV
 import android.content.Context
+import com.tencent.mmkv.MMKV
 
 object MMKVConfigManager {
     private var mmkv: MMKV? = null

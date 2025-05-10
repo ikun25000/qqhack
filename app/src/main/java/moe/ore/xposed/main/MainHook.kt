@@ -5,6 +5,7 @@ package moe.ore.xposed.main
 
 import android.content.ContentValues
 import android.content.Context
+import androidx.core.net.toUri
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import de.robv.android.xposed.XC_MethodHook
@@ -22,7 +23,6 @@ import moe.ore.xposed.util.XPClassloader.load
 import moe.ore.xposed.util.hookMethod
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
-import androidx.core.net.toUri
 
 object MainHook {
     private val defaultUri = "content://${CatchProvider.MY_URI}".toUri()
