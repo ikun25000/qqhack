@@ -1,31 +1,20 @@
 package moe.ore.xposed.main
 
-data class Result(val extra: String, val sign: String, val token: String)
+import com.google.gson.annotations.SerializedName
 
-data class Wrapper(
-    val source: Int,
-    val type: String,
-    val cmd: String,
-    val buffer: String,
-    val seq: Int,
-    val uin: String,
-    val result: Result,
-    val bit: String
+data class Result(
+    @SerializedName("extra") val extra: String,
+    @SerializedName("sign") val sign: String,
+    @SerializedName("token") val token: String
 )
 
-data class EncryptStatisticInfo(val dhCostTime: Long, val encryptAlgorithm: String, val encryptTime: Long)
-
-data class EncryptResult(
-    val source: Int,
-    val ecdhTag: String,
-    val encryptContent: String,
-    val encryptStatisticInfo: EncryptStatisticInfo?,
-    val encryptType: Int,
-    val isUseCache: Boolean,
-    val iv: String,
-    val msgNo: String,
-    val publicKey: String,
-    val secretKey: String,
-    val uin: String,
-    val str: String
+data class Wrapper(
+    @SerializedName("source") val source: Int,
+    @SerializedName("type") val type: String,
+    @SerializedName("cmd") val cmd: String,
+    @SerializedName("buffer") val buffer: String,
+    @SerializedName("seq") val seq: Int,
+    @SerializedName("uin") val uin: String,
+    @SerializedName("result") val result: Result,
+    @SerializedName("bit") val bit: String
 )
