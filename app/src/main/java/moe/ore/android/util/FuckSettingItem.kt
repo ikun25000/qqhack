@@ -2,7 +2,7 @@ package moe.ore.android.util
 
 import android.view.View
 import androidx.appcompat.widget.SwitchCompat
-import com.czm.settingview.SettingView
+import moe.ore.txhook.custom.SettingView
 import java.lang.reflect.Field
 
 object FuckSettingItem {

@@ -23,9 +23,6 @@
 # 保留Hook入口
 -keep class moe.ore.xposed.HookEntry { *; }
 
-# 保留UI组件
--keep class com.czm.settingview.SettingView { *; }
-
 # 保留检测激活
 -keep class moe.ore.txhook.common.** { *; }
 
@@ -37,9 +34,6 @@
 -dontwarn kotlin.Experimental
 
 # Gson
--keepclassmembers public class com.google.gson.**
--keepclassmembers public class com.google.gson.** {public private protected *;}
--keep @interface com.google.gson.annotations.SerializedName
--keepclassmembers class * {
+-keepclassmembers class moe.ore.xposed.main.** {
     @com.google.gson.annotations.SerializedName <fields>;
 }

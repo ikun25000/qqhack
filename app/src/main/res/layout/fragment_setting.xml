@@ -37,7 +37,7 @@
                 tools:ignore="RtlHardcoded,RtlSymmetry" />
         </LinearLayout>
 
-        <com.czm.settingview.SettingView
+        <moe.ore.txhook.custom.SettingView
             android:id="@+id/push_api"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

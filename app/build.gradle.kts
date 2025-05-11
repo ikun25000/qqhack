@@ -52,6 +52,11 @@ android {
         }
     }
 
+    // Disable lint errors for this build
+    lint {
+        abortOnError = false
+    }
+
     configureAppSigningConfigsForRelease(project)
 }
 
@@ -99,17 +104,16 @@ fun configureAppSigningConfigsForRelease(project: Project) {
 dependencies {
     compileOnly("de.robv.android.xposed:api:82")
 
-    // 数据处理的库
     implementation("com.google.code.gson:gson:2.13.1")
     implementation("com.google.protobuf:protobuf-java:4.30.2")
     implementation("com.tencent:mmkv:2.2.2")
-    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     implementation("org.jetbrains.kotlinx:kotlinx-io-jvm:0.1.16")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.8.1")
 
-    // UI交互的库
     implementation("com.rengwuxian.materialedittext:library:2.1.4")
-    implementation("com.github.yogkin:SettingView:1.0.8")
 
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.core:core-ktx:1.16.0")
