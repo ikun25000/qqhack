@@ -22,7 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:title="@string/app_name"
-            android:subtitle="模块未激活"
+            android:subtitle="I’m QQ，每一天，乐在沟通。"
             app:titleTextColor="@android:color/black"
             app:subtitleTextColor="@android:color/darker_gray"
             app:titleMarginTop="10dp"

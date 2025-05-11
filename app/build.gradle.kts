@@ -17,10 +17,6 @@ android {
         targetSdk = 29
         versionCode = 25050419
         versionName = "3.0.4"
-        ndk {
-            //noinspection ChromeOsAbiSupport
-            abiFilters += setOf("arm64-v8a")
-        }
     }
 
     compileOptions {
@@ -106,7 +102,6 @@ dependencies {
 
     implementation("com.google.code.gson:gson:2.13.1")
     implementation("com.google.protobuf:protobuf-java:4.30.2")
-    implementation("com.tencent:mmkv:2.2.2")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 

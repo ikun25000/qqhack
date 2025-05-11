@@ -19,8 +19,8 @@ import moe.ore.script.Consist.GET_TXHOOK_STATE
 import moe.ore.script.Consist.GET_TXHOOK_WS_STATE
 import moe.ore.txhook.app.fragment.MainFragment
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
-import moe.ore.xposed.helper.MMKVConfigManager
-import moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API
+import moe.ore.xposed.util.PrefsManager
+import moe.ore.xposed.util.PrefsManager.KEY_PUSH_API
 
 class CatchProvider: ContentProvider() {
     private lateinit var matcher: UriMatcher
@@ -44,7 +44,7 @@ class CatchProvider: ContentProvider() {
         when(selection) {
             KEY_PUSH_API -> {
                 return FakeCursor().apply {
-                    put(KEY_PUSH_API, MMKVConfigManager[KEY_PUSH_API] ?: "")
+                    put(KEY_PUSH_API, PrefsManager.getString(KEY_PUSH_API))
                 }
             }
         }
@@ -107,23 +107,12 @@ class CatchProvider: ContentProvider() {
                     value.get("result") as ByteArray? ?: EMPTY_BYTE_ARRAY,
                     value.getAsInteger("source")
                 )
-                "ecdh.c_pub_key" -> handler.handleCPublic(
-                    value.get("data") as ByteArray? ?: EMPTY_BYTE_ARRAY,
-                    source = value.getAsInteger("source")
-                )
-                "ecdh.g_share_key" -> handler.handleGShare(
-                    value.get("data") as ByteArray? ?: EMPTY_BYTE_ARRAY,
-                    source = value.getAsInteger("source")
-                )
-
             }
         } }
         return uri
     }
 
-
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
-
         return 0
     }
 
@@ -133,7 +122,6 @@ class CatchProvider: ContentProvider() {
         selection: String?,
         selectionArgs: Array<out String>?
     ): Int {
-
         return 0
     }
 
@@ -153,9 +141,6 @@ class CatchProvider: ContentProvider() {
             abstract fun handlePacket(time: Long, packet: MainFragment.Packet)
 
             abstract fun handleTea(isEnc: Boolean, data: ByteArray, key: ByteArray, result: ByteArray, source: Int)
-
-            abstract fun handleCPublic(bytes: ByteArray, source: Int)
-            abstract fun handleGShare(bytes: ByteArray, source: Int)
         }
     }
 }
@@ -332,5 +317,4 @@ class FakeCursor: Cursor, HashMap<String, Any>() {
     override fun respond(p0: Bundle?): Bundle {
         return extras
     }
-
 }

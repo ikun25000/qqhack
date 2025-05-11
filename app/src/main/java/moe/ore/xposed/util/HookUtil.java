@@ -1,30 +1,24 @@
 package moe.ore.xposed.util;
 
-import static moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API;
-
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-
 import androidx.annotation.OptIn;
-
 import com.google.gson.JsonObject;
-
 import org.jetbrains.annotations.NotNull;
-
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-
 import kotlinx.serialization.ExperimentalSerializationApi;
 import moe.ore.android.util.HttpUtil;
 import moe.ore.script.Consist;
 import moe.ore.txhook.app.CatchProvider;
 import moe.ore.txhook.helper.HexUtil;
 import moe.ore.txhook.helper.KotlinExtKt;
-import moe.ore.xposed.helper.MMKVConfigManager;
+import moe.ore.xposed.util.PrefsManager;
+import static moe.ore.xposed.util.PrefsManager.KEY_PUSH_API;
 
 public final class HookUtil {
     public static WeakReference<Context> contextWeakReference;
@@ -94,7 +88,10 @@ public final class HookUtil {
 
     @OptIn(markerClass = ExperimentalSerializationApi.class)
     public static String getApiUrl() {
-        String url = MMKVConfigManager.INSTANCE.get(KEY_PUSH_API);
+        String url = null;
+        if (PrefsManager.INSTANCE.isInitialized()) {
+            url = PrefsManager.INSTANCE.getString(KEY_PUSH_API, "");
+        }
         if (contentResolver!= null) {
             try {
                 Cursor cursor = contentResolver.query(URI_GET_TXHOOK_STATE, null, KEY_PUSH_API, null, null);

@@ -19,7 +19,6 @@ import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 import moe.ore.android.toast.Toast
 import moe.ore.protocol.SSOLoginMerge
@@ -39,8 +38,6 @@ import moe.ore.txhook.forEachL
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.FormatUtil
 import moe.ore.txhook.helper.ZipUtil
-import moe.ore.xposed.helper.MMKVConfigManager
-import moe.ore.xposed.helper.entries.SavedToken
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -137,26 +134,6 @@ class MainFragment: Fragment() {
                     it.source = source
                     it.key = key
                 })
-            }
-
-            override fun handleCPublic(bytes: ByteArray, source: Int) {
-                MMKVConfigManager.setData(MMKVConfigManager.KEY_DATA_PUBLIC, ProtoBuf.encodeToByteArray(
-                    MMKVConfigManager.getData(MMKVConfigManager.KEY_DATA_PUBLIC).let {
-                        if (it != null) ProtoBuf.decodeFromByteArray(it) else SavedToken()
-                    }.also {
-                        it[source].token = bytes
-                    }
-                ))
-            }
-
-            override fun handleGShare(bytes: ByteArray, source: Int) {
-                MMKVConfigManager.setData(MMKVConfigManager.KEY_DATA_SHARE, ProtoBuf.encodeToByteArray(
-                    MMKVConfigManager.getData(MMKVConfigManager.KEY_DATA_SHARE).let {
-                        if (it != null) ProtoBuf.decodeFromByteArray(it) else SavedToken()
-                    }.also {
-                        it[source].token = bytes
-                    }
-                ))
             }
         }
 

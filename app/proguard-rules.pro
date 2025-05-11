@@ -24,7 +24,7 @@
 -keep class moe.ore.xposed.HookEntry { *; }
 
 # 保留检测激活
--keep class moe.ore.txhook.common.** { *; }
+-keep class moe.ore.xposed.common.** { *; }
 
 # 保留kotlinIO核心部分
 -keep class kotlinx.io.core.** { *; }

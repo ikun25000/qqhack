@@ -10,8 +10,8 @@ import moe.ore.android.dialog.Dialog
 import moe.ore.android.toast.Toast
 import moe.ore.android.util.FuckSettingItem
 import moe.ore.txhook.databinding.FragmentSettingBinding
-import moe.ore.xposed.helper.MMKVConfigManager
-import moe.ore.xposed.helper.MMKVConfigManager.KEY_PUSH_API
+import moe.ore.xposed.util.PrefsManager
+import moe.ore.xposed.util.PrefsManager.KEY_PUSH_API
 
 class SettingFragment: Fragment() {
     private lateinit var binding: FragmentSettingBinding
@@ -28,10 +28,10 @@ class SettingFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val addressText = binding.address
-        addressText.text = MMKVConfigManager[KEY_PUSH_API].orEmpty().ifBlank { "未配置地址" }
+        addressText.text = PrefsManager.getString(KEY_PUSH_API).ifBlank { "未配置地址" }
 
         FuckSettingItem.setSwitchListener(binding.pushApi.also {
-            if (MMKVConfigManager[KEY_PUSH_API].orEmpty().isNotEmpty())
+            if (PrefsManager.getString(KEY_PUSH_API).isNotEmpty())
                 FuckSettingItem.turnSettingSwitch(it, true)
         }) {
             if ((it as SwitchCompat).isChecked) {
@@ -39,7 +39,7 @@ class SettingFragment: Fragment() {
                     .setTitle("输入目标地址")
                     .setTextListener { text ->
                         val finalText = text?.takeIf { it.isNotBlank() } ?: "192.168.31.63:6779"
-                        MMKVConfigManager[KEY_PUSH_API] = finalText.toString()
+                        PrefsManager.setString(KEY_PUSH_API, finalText.toString())
                         addressText.text = finalText
                         Toast.toast(requireContext(), "Push服务配置成功")
                         FuckSettingItem.turnSettingSwitch(binding.pushApi, true)
@@ -54,7 +54,7 @@ class SettingFragment: Fragment() {
                     .show()
             } else {
                 addressText.text = "未配置服务"
-                MMKVConfigManager[KEY_PUSH_API] = ""
+                PrefsManager.setString(KEY_PUSH_API, "")
                 Toast.toast(requireContext(), "Push服务已关闭")
             }
         }
