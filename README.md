@@ -9,6 +9,7 @@
 基于Xposed框架的QQ协议抓包模块，支持：  
 - 获取TCP数据包
 - 获取TEA加解密数据
+- 获取ECDH密钥数据
 - 获取部分MD5加密数据
 - 获取完整的数据包(需配合PC版本的TXHook Server)
 - 分析协议结构(需配合PC版本的TXHook Server)
