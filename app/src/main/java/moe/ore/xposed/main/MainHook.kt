@@ -39,11 +39,13 @@ object MainHook {
     private const val TYPE_GETSIGN = "getsign"
     private const val TYPE_GET_FE_KIT_ATTACH = "getFeKitAttach"
     private const val TYPE_NATIVE_SET_ACCOUNT_KEY = "nativeSetAccountKey"
+    private const val TYPE_ECDH_DATA = "ecdhData"
 
     private val defaultUri = DEFAULT_URI.toUri()
     private var isInit: Boolean = false
     private var source = 0
     private val global = GlobalData()
+    private val EcdhCrypt = load("oicq.wlogin_sdk.tools.EcdhCrypt")!!
     private val CodecWarpper = load("com.tencent.qphone.base.util.CodecWarpper")!!
     private val cryptor = load("oicq.wlogin_sdk.tools.cryptor")!!
     private val tlv_t = load("oicq.wlogin_sdk.tlv_type.tlv_t")!!
@@ -117,11 +119,57 @@ object MainHook {
     }
 
     private fun hookParams() {
+        hookEcdhCrypt()
         hookByteDataGetSign()
         hookDandelionFly()
         hookQQSecuritySignGetSign()
         hookQSecGetFeKitAttach()
         hookD2Key()
+    }
+
+    private fun hookEcdhCrypt() {
+        fun collectEcdhData(ecdhCrypt: Any) {
+            try {
+                val cPubKeyMethod = ecdhCrypt.javaClass.getDeclaredMethod("get_c_pub_key")
+                val gShareKeyMethod = ecdhCrypt.javaClass.getDeclaredMethod("get_g_share_key")
+                val pubKeyVerMethod = ecdhCrypt.javaClass.getDeclaredMethod("get_pub_key_ver")
+
+                cPubKeyMethod.isAccessible = true
+                gShareKeyMethod.isAccessible = true
+                pubKeyVerMethod.isAccessible = true
+
+                val cPubKey = cPubKeyMethod.invoke(ecdhCrypt) as ByteArray
+                val gShareKey = gShareKeyMethod.invoke(ecdhCrypt) as ByteArray
+                val pubKeyVer = pubKeyVerMethod.invoke(ecdhCrypt) as Int
+
+                val jsonObject = JsonObject().apply {
+                    addProperty("type", TYPE_ECDH_DATA)
+                    addProperty("c_pub_key", cPubKey.toHexString())
+                    addProperty("g_share_key", gShareKey.toHexString())
+                    addProperty("pub_key_ver", pubKeyVer)
+                    addProperty("source", source)
+                }
+                val json = Gson().toJson(jsonObject)
+                HookUtil.postTo("ecdh_data", json)
+            } catch (e: Exception) {
+                log("[TXHook] Error collecting EcdhCrypt data: ${e.message}")
+            }
+        }
+
+        EcdhCrypt.hookMethod("initShareKey")?.after { param ->
+            val ecdhCrypt = param.thisObject
+            collectEcdhData(ecdhCrypt)
+        }
+
+        EcdhCrypt.hookMethod("initShareKeyByDefault")?.after { param ->
+            val ecdhCrypt = param.thisObject
+            collectEcdhData(ecdhCrypt)
+        }
+
+        EcdhCrypt.hookMethod("GenECDHKeyEx")?.after { param ->
+            val ecdhCrypt = param.thisObject
+            collectEcdhData(ecdhCrypt)
+        }
     }
 
     private fun hookByteDataGetSign() {
