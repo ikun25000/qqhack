@@ -7,7 +7,7 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import moe.ore.xposed.common.ModeleStatus
-import moe.ore.xposed.hooks.AntiDetection
+import moe.ore.xposed.hook.AntiDetection
 import moe.ore.xposed.main.MainHook
 import moe.ore.xposed.util.FuzzySearchClass
 import moe.ore.xposed.util.XPClassloader

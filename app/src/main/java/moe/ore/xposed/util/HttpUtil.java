@@ -12,15 +12,13 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import kotlinx.serialization.ExperimentalSerializationApi;
-import moe.ore.android.util.HttpUtil;
 import moe.ore.script.Consist;
 import moe.ore.txhook.app.CatchProvider;
 import moe.ore.txhook.helper.HexUtil;
 import moe.ore.txhook.helper.KotlinExtKt;
-import moe.ore.xposed.util.PrefsManager;
 import static moe.ore.xposed.util.PrefsManager.KEY_PUSH_API;
 
-public final class HookUtil {
+public final class HttpUtil {
     public static WeakReference<Context> contextWeakReference;
     private static final Uri URI_GET_TXHOOK_STATE = Uri.parse("content://" + CatchProvider.MY_URI + "/" + Consist.GET_TXHOOK_STATE);
     // private static final Uri URI_GET_TXHOOK_WS_STATE = Uri.parse("content://" + CatchProvider.MY_URI + "/" + Consist.GET_TXHOOK_WS_STATE);
@@ -76,13 +74,13 @@ public final class HookUtil {
     public static void postTo(String url, String action, JsonObject jsonObject, int source) {
         if (url != null && !url.isEmpty()) {
             jsonObject.addProperty("source", source);
-            HttpUtil.INSTANCE.postJson("http://" + url + "/" + action, jsonObject.toString());
+            moe.ore.android.util.HttpUtil.INSTANCE.postJson("http://" + url + "/" + action, jsonObject.toString());
         }
     }
 
     public static void postTo(String url, String action, String str) {
         if (url != null && !url.isEmpty()) {
-            HttpUtil.INSTANCE.postJson("http://" + url + "/" + action, str);
+            moe.ore.android.util.HttpUtil.INSTANCE.postJson("http://" + url + "/" + action, str);
         }
     }
 

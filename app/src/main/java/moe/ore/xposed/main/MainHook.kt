@@ -18,8 +18,9 @@ import moe.ore.txhook.app.CatchProvider
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.hex2ByteArray
 import moe.ore.txhook.helper.toHexString
+import moe.ore.xposed.hook.HookUtil
 import moe.ore.xposed.util.GlobalData
-import moe.ore.xposed.util.HookUtil
+import moe.ore.xposed.util.HttpUtil
 import moe.ore.xposed.util.XPClassloader.load
 import moe.ore.xposed.util.hookMethod
 import java.lang.ref.WeakReference
@@ -53,8 +54,8 @@ object MainHook {
     private val HighwaySessionData = load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
 
     operator fun invoke(source: Int, ctx: Context) {
-        HookUtil.contentResolver = ctx.contentResolver
-        HookUtil.contextWeakReference = WeakReference(ctx)
+        HttpUtil.contentResolver = ctx.contentResolver
+        HttpUtil.contextWeakReference = WeakReference(ctx)
         this.source = source
 
         hookCodecWarpperInit()
@@ -106,15 +107,19 @@ object MainHook {
 
     private fun hookGetSession() {
         HighwaySessionData.hookMethod("getHttpconn_sig_session")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val result = it.result as ByteArray
-            sendDataToDefaultUri(MODE_BDH_SESSION, result)
+            sendDataToDefaultUri(MODE_BDH_SESSION, result, stackTrace)
         }
     }
 
     private fun hookGetSessionKey() {
         HighwaySessionData.hookMethod("getSessionKey")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val result = it.result as ByteArray
-            sendDataToDefaultUri(MODE_BDH_SESSION_KEY, result)
+            sendDataToDefaultUri(MODE_BDH_SESSION_KEY, result, stackTrace)
         }
     }
 
@@ -142,15 +147,18 @@ object MainHook {
                 val gShareKey = gShareKeyMethod.invoke(ecdhCrypt) as ByteArray
                 val pubKeyVer = pubKeyVerMethod.invoke(ecdhCrypt) as Int
 
+                val stackTrace = HookUtil.getFormattedStackTrace()
+
                 val jsonObject = JsonObject().apply {
                     addProperty("type", TYPE_ECDH_DATA)
                     addProperty("c_pub_key", cPubKey.toHexString())
                     addProperty("g_share_key", gShareKey.toHexString())
                     addProperty("pub_key_ver", pubKeyVer)
+                    addProperty("stacktrace", stackTrace)
                     addProperty("source", source)
                 }
                 val json = Gson().toJson(jsonObject)
-                HookUtil.postTo("ecdh_data", json)
+                HttpUtil.postTo("ecdh_data", json)
             } catch (e: Exception) {
                 log("[TXHook] Error collecting EcdhCrypt data: ${e.message}")
             }
@@ -175,20 +183,24 @@ object MainHook {
     private fun hookByteDataGetSign() {
         val bytedataClz = load("com.tencent.secprotocol.ByteData")
         bytedataClz?.hookMethod("getSign")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val result = it.result as ByteArray
             val data = it.args[1] as String
             val salt = it.args[2] as ByteArray
-            postCallToken(TYPE_FLY, data, salt, result)
+            postCallToken(TYPE_FLY, data, salt, result, stackTrace)
         }
     }
 
     private fun hookDandelionFly() {
         val dandelionClz = load("com.tencent.mobileqq.qsec.qsecdandelionsdk.Dandelion")
         dandelionClz?.hookMethod("fly")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val result = it.result as ByteArray
             val data = it.args[0] as String
             val salt = it.args[1] as ByteArray
-            postCallToken(TYPE_FLY, data, salt, result)
+            postCallToken(TYPE_FLY, data, salt, result, stackTrace)
         }
     }
 
@@ -203,6 +215,8 @@ object MainHook {
         }?.let { method ->
             XposedBridge.hookMethod(method, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
+                    val stackTrace = HookUtil.getFormattedStackTrace()
+
                     val cmd = param.args[1] as String
                     val buffer = param.args[2] as ByteArray
                     val seq = param.args[3] as ByteArray
@@ -218,10 +232,11 @@ object MainHook {
                         uin = uin,
                         result = resultData,
                         source = source,
-                        bit = checkData
+                        bit = checkData,
+                        stacktrace = stackTrace
                     )
                     val json = Gson().toJson(wrapper)
-                    HookUtil.postTo("callToken", json)
+                    HttpUtil.postTo("callToken", json)
                 }
             })
         }
@@ -253,11 +268,13 @@ object MainHook {
     private fun hookQSecGetFeKitAttach() {
         val qsecClz = load("com.tencent.mobileqq.qsec.qsecurity.QSec")
         qsecClz?.hookMethod("getFeKitAttach")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val uin = it.args[1] as String
             val cmd = it.args[2] as String
             val subcmd = it.args[3] as String
             val result = it.result as ByteArray
-            postCallTokenWithExtraInfo(TYPE_GET_FE_KIT_ATTACH, uin, cmd, subcmd, result)
+            postCallTokenWithExtraInfo(TYPE_GET_FE_KIT_ATTACH, uin, cmd, subcmd, result, stackTrace)
         }
     }
 
@@ -270,17 +287,21 @@ object MainHook {
 
     private fun hookCodecWarpperNativeSetAccountKey() {
         CodecWarpper.hookMethod("nativeSetAccountKey")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val uin = it.args[0] as String
             val d2key = it.args[7] as ByteArray
-            postCallTokenWithD2Key(uin, d2key)
+            postCallTokenWithD2Key(uin, d2key, stackTrace)
         }
     }
 
     private fun hookCodecWarpperSetAccountKey() {
         CodecWarpper.hookMethod("setAccountKey")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val uin = it.args[0] as String
             val d2key = it.args[7] as ByteArray
-            postCallTokenWithD2Key(uin, d2key)
+            postCallTokenWithD2Key(uin, d2key, stackTrace)
         }
     }
 
@@ -294,9 +315,11 @@ object MainHook {
     private fun hookMD5ToMD5ByteByteArray() {
         XposedHelpers.findAndHookMethod(MD5, "toMD5Byte", ByteArray::class.java, object : XC_MethodHook() {
             override fun afterHookedMethod(param: MethodHookParam) {
+                val stackTrace = HookUtil.getFormattedStackTrace()
+
                 val data = param.args[0] as ByteArray
                 val result = param.result as ByteArray? ?: EMPTY_BYTE_ARRAY
-                submitMd5(data, result)
+                submitMd5(data, result, stackTrace)
             }
         })
     }
@@ -304,10 +327,12 @@ object MainHook {
     private fun hookMD5ToMD5ByteString() {
         XposedHelpers.findAndHookMethod(MD5, "toMD5Byte", String::class.java, object : XC_MethodHook() {
             override fun afterHookedMethod(param: MethodHookParam) {
+                val stackTrace = HookUtil.getFormattedStackTrace()
+
                 val data = (param.args[0] as String?)?.toByteArray()
                 data?.let {
                     val result = param.result as ByteArray
-                    submitMd5(it, result)
+                    submitMd5(it, result, stackTrace)
                 }
             }
         })
@@ -316,10 +341,12 @@ object MainHook {
     private fun hookMD5ToMD5String() {
         XposedHelpers.findAndHookMethod(MD5, "toMD5", String::class.java, object : XC_MethodHook() {
             override fun afterHookedMethod(param: MethodHookParam) {
+                val stackTrace = HookUtil.getFormattedStackTrace()
+
                 val data = (param.args[0] as String?)?.toByteArray()
                 data?.let {
                     val result = (param.result as String).hex2ByteArray()
-                    submitMd5(it, result)
+                    submitMd5(it, result, stackTrace)
                 }
             }
         })
@@ -328,19 +355,22 @@ object MainHook {
     private fun hookMD5ToMD5ByteArray() {
         XposedHelpers.findAndHookMethod(MD5, "toMD5", ByteArray::class.java, object : XC_MethodHook() {
             override fun afterHookedMethod(param: MethodHookParam) {
+                val stackTrace = HookUtil.getFormattedStackTrace()
+
                 val data = param.args[0] as ByteArray
                 val result = (param.result as String).hex2ByteArray()
-                submitMd5(data, result)
+                submitMd5(data, result, stackTrace)
             }
         })
     }
 
-    private fun submitMd5(data: ByteArray, result: ByteArray) {
+    private fun submitMd5(data: ByteArray, result: ByteArray, stacktrace: String) {
         val value = ContentValues()
         value.put("mode", MODE_MD5)
         value.put("data", data)
         value.put("result", result)
-        HookUtil.sendTo(defaultUri, value, source)
+        value.put("stacktrace", stacktrace)
+        HttpUtil.sendTo(defaultUri, value, source)
     }
 
     private fun hookTlv() {
@@ -355,10 +385,12 @@ object MainHook {
 
     private fun hookTlvGetBuf(cmd: java.lang.reflect.Field) {
         tlv_t.hookMethod("get_buf")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val thiz = it.thisObject
             val result = it.result as ByteArray
             val tlvVer = cmd.get(thiz) as Int
-            sendTlvDataToDefaultUri(MODE_TLV_GET_BUF, result, tlvVer)
+            sendTlvDataToDefaultUri(MODE_TLV_GET_BUF, result, tlvVer, stackTrace)
         }
     }
 
@@ -367,19 +399,22 @@ object MainHook {
             it.isAccessible = true
         }
         tlv_t.hookMethod("get_tlv")?.after {
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val thiz = it.thisObject
             val result = buf.get(thiz) as ByteArray
             val tlvVer = cmd.get(thiz) as Int
-            sendTlvDataToDefaultUri(MODE_TLV_SET_BUF, result, tlvVer)
+            sendTlvDataToDefaultUri(MODE_TLV_SET_BUF, result, tlvVer, stackTrace)
         }
     }
 
-    private fun sendTlvDataToDefaultUri(mode: String, data: ByteArray, version: Int) {
+    private fun sendTlvDataToDefaultUri(mode: String, data: ByteArray, version: Int, stacktrace: String) {
         val value = ContentValues()
         value.put("mode", mode)
         value.put("data", data)
         value.put("version", version)
-        HookUtil.sendTo(defaultUri, value, source)
+        value.put("stacktrace", stacktrace)
+        HttpUtil.sendTo(defaultUri, value, source)
     }
 
     private fun hookTea() {
@@ -400,6 +435,8 @@ object MainHook {
     }
 
     private fun handleTeaHook(it: XC_MethodHook.MethodHookParam, isEnc: Boolean) {
+        val stackTrace = HookUtil.getFormattedStackTrace()
+
         val data = it.args[0] as ByteArray
         val skip = it.args[1] as Int
         val len = it.args[2] as Int
@@ -414,7 +451,8 @@ object MainHook {
             value.put("len", len)
             value.put("result", result)
             value.put("key", key)
-            HookUtil.sendTo(defaultUri, value, source)
+            value.put("stacktrace", stackTrace)
+            HttpUtil.sendTo(defaultUri, value, source)
         }
     }
 
@@ -431,31 +469,38 @@ object MainHook {
     }
 
     private fun handleReceDataOneArg(args: Array<Any>) {
+        val stackTrace = HookUtil.getFormattedStackTrace()
+
         val data = args[0] as ByteArray
         val size = data.size
-        sendReceDataToDefaultUri(data, size)
+        sendReceDataToDefaultUri(data, size, stackTrace)
     }
 
     private fun handleReceDataTwoArgs(args: Array<Any>) {
+        val stackTrace = HookUtil.getFormattedStackTrace()
+
         val data = args[0] as ByteArray
         var size = args[1] as Int
         if (size == 0) size = data.size
-        sendReceDataToDefaultUri(data, size)
+        sendReceDataToDefaultUri(data, size, stackTrace)
     }
 
     private fun handleReceDataThreeArgs(args: Array<Any>) {
+        val stackTrace = HookUtil.getFormattedStackTrace()
+
         val data = args[0] as ByteArray
         var size = args[1] as Int
         if (size == 0) size = data.size
-        sendReceDataToDefaultUri(data, size)
+        sendReceDataToDefaultUri(data, size, stackTrace)
     }
 
-    private fun sendReceDataToDefaultUri(data: ByteArray, size: Int) {
+    private fun sendReceDataToDefaultUri(data: ByteArray, size: Int, stacktrace: String) {
         val util = ContentValues()
         util.put("data", data.toHexString())
         util.put("size", size)
         util.put("mode", MODE_RECE_DATA)
-        HookUtil.sendTo(defaultUri, util, source)
+        util.put("stacktrace", stacktrace)
+        HttpUtil.sendTo(defaultUri, util, source)
     }
 
     private fun hookSendPacket() {
@@ -469,6 +514,8 @@ object MainHook {
     }
 
     private fun handleSendPacket(args: Array<Any>, result: ByteArray) {
+        val stackTrace = HookUtil.getFormattedStackTrace()
+
         val seq = args[0] as Int
         val cmd = args[5] as String
         val msgCookie = args[6] as? ByteArray
@@ -480,10 +527,10 @@ object MainHook {
             15 -> args[13] as ByteArray
             else -> EMPTY_BYTE_ARRAY
         }
-        sendSendPacketDataToDefaultUri(uin, seq, cmd, msgCookie, buffer, result)
+        sendSendPacketDataToDefaultUri(uin, seq, cmd, msgCookie, buffer, result, stackTrace)
     }
 
-    private fun sendSendPacketDataToDefaultUri(uin: String, seq: Int, cmd: String, msgCookie: ByteArray?, buffer: ByteArray, result: ByteArray) {
+    private fun sendSendPacketDataToDefaultUri(uin: String, seq: Int, cmd: String, msgCookie: ByteArray?, buffer: ByteArray, result: ByteArray, stacktrace: String) {
         val util = ContentValues()
         util.put("uin", uin)
         util.put("seq", seq)
@@ -493,17 +540,20 @@ object MainHook {
         util.put("buffer", buffer)
         util.put("result", result)
         util.put("mode", MODE_SEND)
-        HookUtil.sendTo(defaultUri, util, source)
+        util.put("stacktrace", stacktrace)
+        HttpUtil.sendTo(defaultUri, util, source)
     }
 
     private fun hookReceive(clazz: Class<*>) {
         clazz.hookMethod("onResponse")?.after { param ->
+            val stackTrace = HookUtil.getFormattedStackTrace()
+
             val from = param.args[1]
-            val seq = HookUtil.invokeFromObjectMethod(from, "getRequestSsoSeq") as Int
-            val cmd = HookUtil.invokeFromObjectMethod(from, "getServiceCmd") as String
-            val msgCookie = HookUtil.invokeFromObjectMethod(from, "getMsgCookie") as? ByteArray
-            val uin = HookUtil.invokeFromObjectMethod(from, "getUin") as String
-            val buffer = HookUtil.invokeFromObjectMethod(from, "getWupBuffer") as ByteArray
+            val seq = HttpUtil.invokeFromObjectMethod(from, "getRequestSsoSeq") as Int
+            val cmd = HttpUtil.invokeFromObjectMethod(from, "getServiceCmd") as String
+            val msgCookie = HttpUtil.invokeFromObjectMethod(from, "getMsgCookie") as? ByteArray
+            val uin = HttpUtil.invokeFromObjectMethod(from, "getUin") as String
+            val buffer = HttpUtil.invokeFromObjectMethod(from, "getWupBuffer") as ByteArray
             // -- qimei [15] imei [2] version [4]
 
             val util = ContentValues()
@@ -513,22 +563,23 @@ object MainHook {
             util.put("type", "unknown")
             util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
             util.put("buffer", buffer)
-
+            util.put("stacktrace", stackTrace)
             util.put("mode", "receive")
 
-            HookUtil.sendTo(defaultUri, util, source)
+            HttpUtil.sendTo(defaultUri, util, source)
         }
     }
 
-    private fun sendDataToDefaultUri(mode: String, data: ByteArray) {
+    private fun sendDataToDefaultUri(mode: String, data: ByteArray, stacktrace: String) {
         val values = ContentValues()
         values.put("mode", mode)
         values.put("data", data.toHexString())
-        HookUtil.sendTo(defaultUri, values, source)
+        values.put("stacktrace", stacktrace)
+        HttpUtil.sendTo(defaultUri, values, source)
     }
 
-    private fun postCallToken(type: String, data: String, salt: ByteArray, result: ByteArray) {
-        HookUtil.postTo("callToken", JsonObject().apply {
+    private fun postCallToken(type: String, data: String, salt: ByteArray, result: ByteArray, stacktrace: String) {
+        HttpUtil.postTo("callToken", JsonObject().apply {
             addProperty("type", type)
             addProperty("data", data)
             addProperty("salt", salt.toHexString())
@@ -537,11 +588,12 @@ object MainHook {
                 addProperty("bit", global["checkData"] as String)
                 global.remove("checkData")
             }
+            addProperty("stacktrace", stacktrace)
         }, source)
     }
 
-    private fun postCallTokenWithExtraInfo(type: String, uin: String, cmd: String, subcmd: String, result: ByteArray) {
-        HookUtil.postTo("callToken", JsonObject().apply {
+    private fun postCallTokenWithExtraInfo(type: String, uin: String, cmd: String, subcmd: String, result: ByteArray, stacktrace: String) {
+        HttpUtil.postTo("callToken", JsonObject().apply {
             addProperty("type", type)
             addProperty("uin", uin)
             addProperty("cmd", cmd)
@@ -551,14 +603,16 @@ object MainHook {
                 addProperty("bit", global["checkData"] as String)
                 global.remove("checkData")
             }
+            addProperty("stacktrace", stacktrace)
         }, source)
     }
 
-    private fun postCallTokenWithD2Key(uin: String, d2key: ByteArray) {
-        HookUtil.postTo("callToken", JsonObject().apply {
+    private fun postCallTokenWithD2Key(uin: String, d2key: ByteArray, stacktrace: String) {
+        HttpUtil.postTo("callToken", JsonObject().apply {
             addProperty("type", TYPE_NATIVE_SET_ACCOUNT_KEY)
             addProperty("uin", uin)
             addProperty("d2key", d2key.toHexString())
+            addProperty("stacktrace", stacktrace)
         }, source)
     }
 }
@@ -577,5 +631,6 @@ data class Wrapper(
     @SerializedName("seq") val seq: Int,
     @SerializedName("uin") val uin: String,
     @SerializedName("result") val result: Result,
-    @SerializedName("bit") val bit: String
+    @SerializedName("bit") val bit: String,
+    @SerializedName("stacktrace") val stacktrace: String
 )

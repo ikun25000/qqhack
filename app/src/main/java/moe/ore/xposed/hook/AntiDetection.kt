@@ -1,4 +1,4 @@
-package moe.ore.xposed.hooks
+package moe.ore.xposed.hook
 
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
