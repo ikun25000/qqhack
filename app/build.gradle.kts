@@ -69,7 +69,7 @@ android {
     android.applicationVariants.all {
         outputs.map { it as BaseVariantOutputImpl }
             .forEach {
-                it.outputFileName = "FuckFEKit-v${versionName}.apk"
+                it.outputFileName = "TXHook-v${versionName}.apk"
             }
     }
 
@@ -128,10 +128,6 @@ fun getLocalProperty(propertyName: String): String? {
         localProperties.load(it)
     }
     return localProperties.getProperty(propertyName, null)
-}
-
-fun getEnvVariable(name: String): String? {
-    return System.getenv(name)
 }
 
 fun getGitCommitCount(): Int {
