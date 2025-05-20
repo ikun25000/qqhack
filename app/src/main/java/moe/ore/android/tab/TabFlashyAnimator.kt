@@ -167,7 +167,7 @@ class TabFlashyAnimator(private var tabLayout: TabLayout?, private val selectedC
     fun setBadge(count: Int, position: Int) {
         val tab = tabLayout!!.getTabAt(position)!!
         val badge = tab.customView!!.findViewById<TextView>(R.id.badge)
-        badge.visibility = if (count == 0) View.GONE else View.VISIBLE
+        badge.visibility = if (count == 0) GONE else VISIBLE
         badge.text = count.toString()
     }
 }

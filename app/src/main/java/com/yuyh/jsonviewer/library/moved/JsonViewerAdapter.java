@@ -92,11 +92,8 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             String key = Objects.requireNonNull(mJSONObject.names()).optString(position - 1); // 遍历key
             Object value = mJSONObject.opt(key);
 
-            if (position < getItemCount() - 2) {
-                handleJsonObject(key, value, itemView, true, 1);
-            } else {
-                handleJsonObject(key, value, itemView, false, 1); // 最后一组，结尾不需要逗号
-            }
+            // 最后一组，结尾不需要逗号
+            handleJsonObject(key, value, itemView, position < getItemCount() - 2, 1);
         }
 
         if (mJSONArray != null) {
@@ -113,11 +110,8 @@ public class JsonViewerAdapter extends BaseJsonViewerAdapter<JsonViewerAdapter.J
             }
 
             Object value = mJSONArray.opt(position - 1); // 遍历array
-            if (position < getItemCount() - 2) {
-                handleJsonArray(value, itemView, true, 1);
-            } else {
-                handleJsonArray(value, itemView, false, 1); // 最后一组，结尾不需要逗号
-            }
+            // 最后一组，结尾不需要逗号
+            handleJsonArray(value, itemView, position < getItemCount() - 2, 1);
         }
     }
 

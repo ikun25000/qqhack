@@ -1,22 +1,28 @@
 package moe.ore.xposed.util;
 
+import static moe.ore.xposed.util.PrefsManager.KEY_PUSH_API;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+
 import androidx.annotation.OptIn;
+
 import com.google.gson.JsonObject;
+
 import org.jetbrains.annotations.NotNull;
+
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+
 import kotlinx.serialization.ExperimentalSerializationApi;
 import moe.ore.script.Consist;
 import moe.ore.txhook.app.CatchProvider;
 import moe.ore.txhook.helper.HexUtil;
 import moe.ore.txhook.helper.KotlinExtKt;
-import static moe.ore.xposed.util.PrefsManager.KEY_PUSH_API;
 
 public final class HttpUtil {
     public static WeakReference<Context> contextWeakReference;

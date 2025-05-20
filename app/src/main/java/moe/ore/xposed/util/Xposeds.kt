@@ -127,7 +127,7 @@ fun hookMethod(clz: String?, loader: ClassLoader?, funName: String?, vararg args
     }
 }
 
-fun beforeHook(block: (param: XC_MethodHook.MethodHookParam) -> Unit): XC_MethodHook {
+fun beforeHook(block: (param: MethodHookParam) -> Unit): XC_MethodHook {
     return object :XC_MethodHook() {
         override fun afterHookedMethod(param: MethodHookParam) {
             block(param)
@@ -135,7 +135,7 @@ fun beforeHook(block: (param: XC_MethodHook.MethodHookParam) -> Unit): XC_Method
     }
 }
 
-fun afterHook(ver: Int = XCallback.PRIORITY_DEFAULT, block: (param: XC_MethodHook.MethodHookParam) -> Unit): XC_MethodHook {
+fun afterHook(ver: Int = XCallback.PRIORITY_DEFAULT, block: (param: MethodHookParam) -> Unit): XC_MethodHook {
     return object :XC_MethodHook(ver) {
         override fun afterHookedMethod(param: MethodHookParam) {
             block(param)
@@ -179,6 +179,6 @@ class XposedMethodHook: XC_MethodHook() {
 }
 
 fun interface XposedMethodHookFunction {
-    operator fun invoke(param: XC_MethodHook.MethodHookParam)
+    operator fun invoke(param: MethodHookParam)
 }
 

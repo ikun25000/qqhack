@@ -21,7 +21,7 @@ public class JsonItemView extends LinearLayout {
 
     public static int TEXT_SIZE_DP = 12;
 
-    private Context mContext;
+    private final Context mContext;
 
     private TextView mTvLeft, mTvRight;
     private ImageView mIvIcon;

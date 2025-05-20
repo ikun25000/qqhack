@@ -26,17 +26,12 @@ object FuzzySearchClass {
     }
 
     private fun isBaseType(clz: Class<*>): Boolean {
-        if (
-            clz == Long::class.java ||
-            clz == Double::class.java ||
-            clz == Float::class.java ||
-            clz == Int::class.java ||
-            clz == Short::class.java ||
-            clz == Char::class.java ||
-            clz == Byte::class.java
-        ) {
-            return true
-        }
-        return false
+        return clz == Long::class.java ||
+                clz == Double::class.java ||
+                clz == Float::class.java ||
+                clz == Int::class.java ||
+                clz == Short::class.java ||
+                clz == Char::class.java ||
+                clz == Byte::class.java
     }
 }
