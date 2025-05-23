@@ -37,3 +37,8 @@
 -keepclassmembers class moe.ore.xposed.main.** {
     @com.google.gson.annotations.SerializedName <fields>;
 }
+
+# 保留内部类
+-keepclassmembers class * {
+    static ** CREATOR;
+}
