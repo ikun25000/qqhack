@@ -19,8 +19,8 @@ import moe.ore.script.Consist.GET_TXHOOK_STATE
 import moe.ore.script.Consist.GET_TXHOOK_WS_STATE
 import moe.ore.txhook.app.fragment.MainFragment
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
-import moe.ore.xposed.util.PrefsManager
-import moe.ore.xposed.util.PrefsManager.KEY_PUSH_API
+import moe.ore.xposed.utils.PrefsManager
+import moe.ore.xposed.utils.PrefsManager.KEY_PUSH_API
 
 class CatchProvider: ContentProvider() {
     private lateinit var matcher: UriMatcher

@@ -1,4 +1,4 @@
-package moe.ore.xposed.util
+package moe.ore.xposed.utils
 
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam

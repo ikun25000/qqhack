@@ -1,4 +1,4 @@
-package moe.ore.xposed.util
+package moe.ore.xposed.utils
 
 import java.lang.reflect.Field
 

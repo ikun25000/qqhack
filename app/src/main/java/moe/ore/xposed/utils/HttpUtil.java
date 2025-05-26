@@ -1,6 +1,6 @@
-package moe.ore.xposed.util;
+package moe.ore.xposed.utils;
 
-import static moe.ore.xposed.util.PrefsManager.KEY_PUSH_API;
+import static moe.ore.xposed.utils.PrefsManager.KEY_PUSH_API;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;

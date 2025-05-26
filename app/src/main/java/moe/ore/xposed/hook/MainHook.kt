@@ -1,7 +1,4 @@
-@file:Suppress("LocalVariableName", "SpellCheckingInspection")
-@file:OptIn(ExperimentalSerializationApi::class)
-
-package moe.ore.xposed.main
+package moe.ore.xposed.hook
 
 import android.content.ContentValues
 import android.content.Context
@@ -11,23 +8,22 @@ import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedBridge.log
 import de.robv.android.xposed.XposedHelpers
-import kotlinx.serialization.ExperimentalSerializationApi
 import moe.ore.txhook.app.CatchProvider
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.hex2ByteArray
 import moe.ore.txhook.helper.toHexString
-import moe.ore.xposed.hook.HookUtil
-import moe.ore.xposed.util.GlobalData
-import moe.ore.xposed.util.HttpUtil
-import moe.ore.xposed.util.XPClassloader.load
-import moe.ore.xposed.util.hookMethod
+import moe.ore.xposed.utils.GlobalData
+import moe.ore.xposed.utils.HookUtil
+import moe.ore.xposed.utils.HttpUtil
+import moe.ore.xposed.utils.XPClassloader
+import moe.ore.xposed.utils.hookMethod
 import java.lang.ref.WeakReference
+import java.lang.reflect.Field
 import java.nio.ByteBuffer
 
 object MainHook {
-    private const val DEFAULT_URI = "content://${CatchProvider.MY_URI}"
+    private const val DEFAULT_URI = "content://${CatchProvider.Companion.MY_URI}"
     private const val MODE_BDH_SESSION = "bdh.session"
     private const val MODE_BDH_SESSION_KEY = "bdh.sessionkey"
     private const val MODE_MD5 = "md5"
@@ -46,12 +42,12 @@ object MainHook {
     private var isInit: Boolean = false
     private var source = 0
     private val global = GlobalData()
-    private val EcdhCrypt = load("oicq.wlogin_sdk.tools.EcdhCrypt")!!
-    private val CodecWarpper = load("com.tencent.qphone.base.util.CodecWarpper")!!
-    private val cryptor = load("oicq.wlogin_sdk.tools.cryptor")!!
-    private val tlv_t = load("oicq.wlogin_sdk.tlv_type.tlv_t")!!
-    private val MD5 = load("oicq.wlogin_sdk.tools.MD5")!!
-    private val HighwaySessionData = load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
+    private val EcdhCrypt = XPClassloader.load("oicq.wlogin_sdk.tools.EcdhCrypt")!!
+    private val CodecWarpper = XPClassloader.load("com.tencent.qphone.base.util.CodecWarpper")!!
+    private val cryptor = XPClassloader.load("oicq.wlogin_sdk.tools.cryptor")!!
+    private val tlv_t = XPClassloader.load("oicq.wlogin_sdk.tlv_type.tlv_t")!!
+    private val MD5 = XPClassloader.load("oicq.wlogin_sdk.tools.MD5")!!
+    private val HighwaySessionData = XPClassloader.load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
 
     operator fun invoke(source: Int, ctx: Context) {
         HttpUtil.contentResolver = ctx.contentResolver
@@ -89,13 +85,13 @@ object MainHook {
     }
 
     private fun hookForceUseHttp() {
-        val connMng = load("com.tencent.mobileqq.highway.config.ConfigManager")
+        val connMng = XPClassloader.load("com.tencent.mobileqq.highway.config.ConfigManager")
         connMng.hookMethod("getNextSrvAddr")?.after {
             XposedHelpers.setIntField(it.result, "protoType", 2)
         }
 
-        val pointClz = load("com.tencent.mobileqq.highway.utils.EndPoint")
-        val tcpConn = load("com.tencent.mobileqq.highway.conn.TcpConnection")
+        val pointClz = XPClassloader.load("com.tencent.mobileqq.highway.utils.EndPoint")
+        val tcpConn = XPClassloader.load("com.tencent.mobileqq.highway.conn.TcpConnection")
         XposedBridge.hookAllConstructors(tcpConn, object : XC_MethodHook() {
             override fun beforeHookedMethod(param: MethodHookParam) {
                 param.args.filter { it.javaClass == pointClz }.forEach {
@@ -160,7 +156,7 @@ object MainHook {
                 val json = Gson().toJson(jsonObject)
                 HttpUtil.postTo("ecdh_data", json)
             } catch (e: Exception) {
-                log("[TXHook] Error collecting EcdhCrypt data: ${e.message}")
+                XposedBridge.log("[TXHook] Error collecting EcdhCrypt data: ${e.message}")
             }
         }
 
@@ -181,7 +177,7 @@ object MainHook {
     }
 
     private fun hookByteDataGetSign() {
-        val bytedataClz = load("com.tencent.secprotocol.ByteData")
+        val bytedataClz = XPClassloader.load("com.tencent.secprotocol.ByteData")
         bytedataClz?.hookMethod("getSign")?.after {
             val stackTrace = HookUtil.getFormattedStackTrace()
 
@@ -193,7 +189,8 @@ object MainHook {
     }
 
     private fun hookDandelionFly() {
-        val dandelionClz = load("com.tencent.mobileqq.qsec.qsecdandelionsdk.Dandelion")
+        val dandelionClz =
+            XPClassloader.load("com.tencent.mobileqq.qsec.qsecdandelionsdk.Dandelion")
         dandelionClz?.hookMethod("fly")?.after {
             val stackTrace = HookUtil.getFormattedStackTrace()
 
@@ -205,7 +202,7 @@ object MainHook {
     }
 
     private fun hookQQSecuritySignGetSign() {
-        val qqsecuritysignClz = load("com.tencent.mobileqq.sign.QQSecuritySign")
+        val qqsecuritysignClz = XPClassloader.load("com.tencent.mobileqq.sign.QQSecuritySign")
         qqsecuritysignClz?.declaredMethods?.firstOrNull {
             it.name == "getSign" && it.parameterTypes.size == 5 &&
                     it.parameterTypes[1] == String::class.java &&
@@ -266,7 +263,7 @@ object MainHook {
     }
 
     private fun hookQSecGetFeKitAttach() {
-        val qsecClz = load("com.tencent.mobileqq.qsec.qsecurity.QSec")
+        val qsecClz = XPClassloader.load("com.tencent.mobileqq.qsec.qsecurity.QSec")
         qsecClz?.hookMethod("getFeKitAttach")?.after {
             val stackTrace = HookUtil.getFormattedStackTrace()
 
@@ -374,7 +371,7 @@ object MainHook {
     }
 
     private fun hookTlv() {
-        kotlin.runCatching {
+        runCatching {
             val cmd = tlv_t.getDeclaredField("_cmd").also {
                 it.isAccessible = true
             }
@@ -383,7 +380,7 @@ object MainHook {
         }
     }
 
-    private fun hookTlvGetBuf(cmd: java.lang.reflect.Field) {
+    private fun hookTlvGetBuf(cmd: Field) {
         tlv_t.hookMethod("get_buf")?.after {
             val stackTrace = HookUtil.getFormattedStackTrace()
 
@@ -394,7 +391,7 @@ object MainHook {
         }
     }
 
-    private fun hookTlvSetBuf(cmd: java.lang.reflect.Field) {
+    private fun hookTlvSetBuf(cmd: Field) {
         val buf = tlv_t.getDeclaredField("_buf").also {
             it.isAccessible = true
         }
@@ -463,7 +460,7 @@ object MainHook {
                 1 -> handleReceDataOneArg(args)
                 2 -> handleReceDataTwoArgs(args)
                 3 -> handleReceDataThreeArgs(args)
-                else -> log("[TXHook] onReceData 不知道hook到了个不知道什么东西")
+                else -> XposedBridge.log("[TXHook] onReceData 不知道hook到了个不知道什么东西")
             }
         }
     }
@@ -508,7 +505,7 @@ object MainHook {
             val args = param.args
             when (args.size) {
                 17, 14, 16, 15 -> handleSendPacket(args, param.result as ByteArray)
-                else -> log("[TXHook] encodeRequest 不知道hook到了个不知道什么东西")
+                else -> XposedBridge.log("[TXHook] encodeRequest 不知道hook到了个不知道什么东西")
             }
         }
     }

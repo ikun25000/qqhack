@@ -34,7 +34,7 @@
 -dontwarn kotlin.Experimental
 
 # Gson
--keepclassmembers class moe.ore.xposed.main.** {
+-keepclassmembers class moe.ore.xposed.hook.** {
     @com.google.gson.annotations.SerializedName <fields>;
 }
 

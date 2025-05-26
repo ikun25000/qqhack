@@ -7,7 +7,7 @@ import moe.ore.android.AndroKtx
 import moe.ore.android.dialog.Dialog
 import moe.ore.txhook.app.MainActivity
 import moe.ore.xposed.common.ModeleStatus
-import moe.ore.xposed.util.PrefsManager
+import moe.ore.xposed.utils.PrefsManager
 import kotlin.system.exitProcess
 
 class EntryActivity: Activity() {

@@ -1,6 +1,6 @@
-package moe.ore.xposed.util
+package moe.ore.xposed.utils
 
-import moe.ore.xposed.HookEntry.Companion.PACKAGE_NAME_QQ
+import moe.ore.xposed.hook.config.PACKAGE_NAME_QQ
 
 object XPClassloader: ClassLoader() {
     lateinit var hostClassLoader: ClassLoader

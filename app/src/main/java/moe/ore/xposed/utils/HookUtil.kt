@@ -1,4 +1,4 @@
-package moe.ore.xposed.hook
+package moe.ore.xposed.utils
 
 object HookUtil {
     fun getFormattedStackTrace(): String {

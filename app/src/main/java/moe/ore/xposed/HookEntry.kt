@@ -1,56 +1,73 @@
 package moe.ore.xposed
 
+import android.app.Application
 import android.content.Context
+import android.content.res.XModuleResources
 import de.robv.android.xposed.IXposedHookLoadPackage
+import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import moe.ore.xposed.common.ModeleStatus
 import moe.ore.xposed.hook.AntiDetection
-import moe.ore.xposed.main.MainHook
-import moe.ore.xposed.util.FuzzySearchClass
-import moe.ore.xposed.util.XPClassloader
-import moe.ore.xposed.util.afterHook
+import moe.ore.xposed.hook.MainHook
+import moe.ore.xposed.hook.base.ProcUtil
+import moe.ore.xposed.hook.base.hostAndroidId
+import moe.ore.xposed.hook.base.hostApp
+import moe.ore.xposed.hook.base.hostAppName
+import moe.ore.xposed.hook.base.hostClassLoader
+import moe.ore.xposed.hook.base.hostPackageName
+import moe.ore.xposed.hook.base.hostProcessName
+import moe.ore.xposed.hook.base.hostVersionCode
+import moe.ore.xposed.hook.base.hostVersionName
+import moe.ore.xposed.hook.base.modulePath
+import moe.ore.xposed.hook.base.moduleRes
+import moe.ore.xposed.hook.enums.QQTypeEnum
+import moe.ore.xposed.utils.FuzzySearchClass
+import moe.ore.xposed.utils.XPClassloader
+import moe.ore.xposed.utils.afterHook
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
-internal class HookEntry: IXposedHookLoadPackage {
+internal class HookEntry: IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
         @JvmStatic
         var sec_static_stage_inited = false
-
-        const val PACKAGE_NAME_QQ = "com.tencent.mobileqq"
-        const val PACKAGE_NAME_TIM = "com.tencent.tim"
-        const val PACKAGE_NAME_WATCH = "com.tencent.qqlite"
-        const val PACKAGE_NAME_QIDIAN = "com.tencent.qidian"
-        const val PACKAGE_NAME_TXHOOK = "moe.ore.txhook"
     }
 
     private var firstStageInit = false
 
-    override fun handleLoadPackage(param: XC_LoadPackage.LoadPackageParam) {
-        when(param.packageName) {
-            PACKAGE_NAME_TXHOOK -> {
-                XposedHelpers.findAndHookMethod(ModeleStatus::class.java.name, param.classLoader, "isModuleActivated", XC_MethodReplacement.returnConstant(true))
+    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
+        if (QQTypeEnum.contain(lpparam.packageName)) {
+            if (QQTypeEnum.valueOfPackage(lpparam.packageName) != QQTypeEnum.TXHook) {
+                hostPackageName = lpparam.packageName
+                hostProcessName = lpparam.processName
+                hostClassLoader = lpparam.classLoader
             }
-            PACKAGE_NAME_QQ -> entryMQQ(0, param)
-            PACKAGE_NAME_TIM -> entryMQQ(1, param)
-            PACKAGE_NAME_WATCH -> entryMQQ(2, param)
-            PACKAGE_NAME_QIDIAN -> entryMQQ(3, param)
+
+            when (QQTypeEnum.valueOfPackage(lpparam.packageName)) {
+                QQTypeEnum.QQ -> entryMQQ(0, lpparam)
+                QQTypeEnum.TIM -> entryMQQ(1, lpparam)
+                QQTypeEnum.WATCH -> entryMQQ(2, lpparam)
+                QQTypeEnum.QIDIAN -> entryMQQ(3, lpparam)
+                QQTypeEnum.TXHook -> {
+                    XposedHelpers.findAndHookMethod(ModeleStatus::class.java.name, lpparam.classLoader, "isModuleActivated", XC_MethodReplacement.returnConstant(true))
+                }
+            }
         }
     }
 
     private fun entryMQQ(source: Int, loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         if (firstStageInit) return
-        val startup = afterHook(51) { param ->
+        val startup = afterHook(50) { param ->
             try {
                 val loader = param.thisObject.javaClass.classLoader!!
                 XPClassloader.ctxClassLoader = loader
                 val clz = if (source == 2) {
                     try {
                         loader.loadClass("com.tencent.qqnt.watch.app.WatchApplicationDelegate")
-                    } catch (e: ClassNotFoundException) {
+                    } catch (_: ClassNotFoundException) {
                         loader.loadClass("com.tencent.common.app.BaseApplicationImpl")
                     }
                 } else {
@@ -61,7 +78,13 @@ internal class HookEntry: IXposedHookLoadPackage {
                 }
                 val app: Context? = field.get(null) as? Context
                 if (app != null) {
-                    execStartupInit(source, app, loadPackageParam.processName)
+                    hostApp = app as Application
+                    hostClassLoader = hostApp.classLoader
+                    if (ProcUtil.isMain) {
+                        XposedBridge.log("[TXHook] hook version: ${hostAppName}-$hostVersionName($hostVersionCode)")
+                        XposedBridge.log("[TXHook] androidId: $hostAndroidId")
+                    }
+                    execStartupInit(source, app)
                 } else {
                     XposedBridge.log("[TXHook] Unable to fetch context")
                 }
@@ -73,7 +96,7 @@ internal class HookEntry: IXposedHookLoadPackage {
         if (source == 2) {
             val clz = try {
                 loadPackageParam.classLoader.loadClass("com.tencent.mobileqq.startup.step.LoadDex")
-            } catch (e: ClassNotFoundException){
+            } catch (_: ClassNotFoundException){
                 loadPackageParam.classLoader.loadClass("com.tencent.qqnt.watch.startup.task.ApplicationCreateStageTask")
             }
             clz.declaredMethods
@@ -121,7 +144,7 @@ internal class HookEntry: IXposedHookLoadPackage {
         }
     }
 
-    private fun execStartupInit(source: Int, ctx: Context, processName: String) {
+    private fun execStartupInit(source: Int, ctx: Context) {
         if (sec_static_stage_inited) return
 
         val classLoader = ctx.classLoader.also { requireNotNull(it) }
@@ -132,7 +155,7 @@ internal class HookEntry: IXposedHookLoadPackage {
                 System.setProperty("hook_flag", "1")
             } else return
 
-            if (processName.endsWith(":MSF")) {
+            if (ProcUtil.isMsf) {
                 AntiDetection()
                 MainHook(source, ctx)
                 sec_static_stage_inited = true
@@ -172,5 +195,11 @@ internal class HookEntry: IXposedHookLoadPackage {
             }.isSuccess
         }
         return false
+    }
+
+    override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam?) {
+        if (startupParam == null) return
+        modulePath = startupParam.modulePath
+        moduleRes = XModuleResources.createInstance(modulePath, null)
     }
 }

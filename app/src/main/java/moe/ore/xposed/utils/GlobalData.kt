@@ -1,4 +1,4 @@
-package moe.ore.xposed.util
+package moe.ore.xposed.utils
 
 class GlobalData {
     private val cacheMap = hashMapOf<String, Any?>()

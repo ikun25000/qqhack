@@ -10,8 +10,8 @@ import moe.ore.android.dialog.Dialog
 import moe.ore.android.toast.Toast
 import moe.ore.android.util.FuckSettingItem
 import moe.ore.txhook.databinding.FragmentSettingBinding
-import moe.ore.xposed.util.PrefsManager
-import moe.ore.xposed.util.PrefsManager.KEY_PUSH_API
+import moe.ore.xposed.utils.PrefsManager
+import moe.ore.xposed.utils.PrefsManager.KEY_PUSH_API
 
 class SettingFragment: Fragment() {
     private lateinit var binding: FragmentSettingBinding
