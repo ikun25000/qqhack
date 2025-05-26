@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "moe.ore.txhook"
-        minSdk = 23
+        minSdk = 24
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 29
         versionCode = appVerCode

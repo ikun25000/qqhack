@@ -13,9 +13,16 @@ import moe.ore.txhook.app.CatchProvider
 import moe.ore.txhook.helper.EMPTY_BYTE_ARRAY
 import moe.ore.txhook.helper.hex2ByteArray
 import moe.ore.txhook.helper.toHexString
+import moe.ore.xposed.hook.base.hostClassLoader
+import moe.ore.xposed.hook.base.hostPackageName
+import moe.ore.xposed.hook.base.hostVersionCode
+import moe.ore.xposed.hook.enums.QQTypeEnum
+import moe.ore.xposed.utils.FuzzySearchClass
 import moe.ore.xposed.utils.GlobalData
 import moe.ore.xposed.utils.HookUtil
 import moe.ore.xposed.utils.HttpUtil
+import moe.ore.xposed.utils.PacketDedupCache
+import moe.ore.xposed.utils.QQ_9_1_90_26520
 import moe.ore.xposed.utils.XPClassloader
 import moe.ore.xposed.utils.hookMethod
 import java.lang.ref.WeakReference
@@ -48,6 +55,7 @@ object MainHook {
     private val tlv_t = XPClassloader.load("oicq.wlogin_sdk.tlv_type.tlv_t")!!
     private val MD5 = XPClassloader.load("oicq.wlogin_sdk.tools.MD5")!!
     private val HighwaySessionData = XPClassloader.load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
+    private val MSFKernel = XPClassloader.load("com.tencent.mobileqq.msfcore.MSFKernel")
 
     operator fun invoke(source: Int, ctx: Context) {
         HttpUtil.contentResolver = ctx.contentResolver
@@ -62,6 +70,9 @@ object MainHook {
         hookReceData()
         hookBDH()
         hookParams()
+        if (QQTypeEnum.valueOfPackage(hostPackageName) == QQTypeEnum.QQ && hostVersionCode >= QQ_9_1_90_26520) {
+            hookMSFKernelPacket()
+        }
     }
 
     private fun hookCodecWarpperInit() {
@@ -75,6 +86,80 @@ object MainHook {
             }
         }?.after {
             isInit = true
+        }
+    }
+
+    private fun hookMSFKernelPacket() {
+        hookMSFKernelSend()
+        hookMSFKernelReceive()
+    }
+
+    private fun hookMSFKernelReceive() {
+        FuzzySearchClass.findClassWithMethod(
+            classLoader = hostClassLoader,
+            packagePrefix = "com.tencent.mobileqq.msf.core",
+            innerClassPath = "c.b\$e",
+            methodName = "onMSFPacketState",
+            parameterTypes = arrayOf(
+                XPClassloader.load("com.tencent.mobileqq.msfcore.MSFResponseAdapter")!!
+            )
+        )?.hookMethod("onMSFPacketState")?.after {
+            val from = it.args[0]
+
+            val cmdField = from.javaClass.getDeclaredField("mCmd").also { it.isAccessible = true }
+            val cmd = cmdField.get(from) as String
+            val seqField = from.javaClass.getDeclaredField("mSeq").also { it.isAccessible = true }
+            val seq = seqField.get(from) as Int
+            val uinField = from.javaClass.getDeclaredField("mUin").also { it.isAccessible = true }
+            val uin = uinField.get(from) as String
+            val dataField = from.javaClass.getDeclaredField("mRecvData").also { it.isAccessible = true }
+            val data = dataField.get(from) as ByteArray
+
+            if (PacketDedupCache.shouldProcess(seq, "receive_$cmd", data)) {
+                val stackTrace = HookUtil.getFormattedStackTrace()
+
+                val value = ContentValues()
+                value.put("cmd", cmd)
+                value.put("buffer", data.toHexString())
+                value.put("uin", uin)
+                value.put("seq", seq)
+                value.put("msgCookie", EMPTY_BYTE_ARRAY.toHexString())
+                value.put("type", "unknown")
+                value.put("mode", "receive")
+                value.put("stacktrace", stackTrace)
+                HttpUtil.sendTo(defaultUri, value, source)
+            }
+        }
+    }
+
+    private fun hookMSFKernelSend() {
+        MSFKernel?.hookMethod("sendPacket")?.after {
+            val from = it.args[0]
+            if (from.javaClass.name == "com.tencent.mobileqq.msfcore.MSFRequestAdapter") {
+                val cmdField = from.javaClass.getDeclaredField("mCmd").also { it.isAccessible = true }
+                val cmd = cmdField.get(from) as String
+                val seqField = from.javaClass.getDeclaredField("mSeq").also { it.isAccessible = true }
+                val seq = seqField.get(from) as Int
+                val uinField = from.javaClass.getDeclaredField("mUin").also { it.isAccessible = true }
+                val uin = uinField.get(from) as String
+                val dataField = from.javaClass.getDeclaredField("mData").also { it.isAccessible = true }
+                val data = dataField.get(from) as ByteArray
+
+                if (PacketDedupCache.shouldProcess(seq, "send_$cmd", data)) {
+                    val stackTrace = HookUtil.getFormattedStackTrace()
+
+                    val value = ContentValues()
+                    value.put("cmd", cmd)
+                    value.put("buffer", data.toHexString())
+                    value.put("uin", uin)
+                    value.put("seq", seq)
+                    value.put("msgCookie", EMPTY_BYTE_ARRAY.toHexString())
+                    value.put("type", "unknown")
+                    value.put("mode", MODE_SEND)
+                    value.put("stacktrace", stackTrace)
+                    HttpUtil.sendTo(defaultUri, value, source)
+                }
+            }
         }
     }
 
