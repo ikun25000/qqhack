@@ -1,18 +1,12 @@
 package moe.ore.xposed.hook
 
-import moe.ore.xposed.hook.base.hostPackageName
-import moe.ore.xposed.hook.base.hostVersionCode
-import moe.ore.xposed.hook.enums.QQTypeEnum
-import moe.ore.xposed.utils.QQ_9_1_90_26520
 import moe.ore.xposed.utils.XPClassloader.load
 import moe.ore.xposed.utils.hookMethod
 
 internal object AntiDetection {
 
     operator fun invoke() {
-        if (QQTypeEnum.valueOfPackage(hostPackageName) != QQTypeEnum.QQ || hostVersionCode < QQ_9_1_90_26520) {
-            disableSwitch()
-        }
+        disableSwitch()
     }
 
     private fun disableSwitch() {

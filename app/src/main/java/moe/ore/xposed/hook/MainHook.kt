@@ -17,12 +17,14 @@ import moe.ore.xposed.hook.base.hostClassLoader
 import moe.ore.xposed.hook.base.hostPackageName
 import moe.ore.xposed.hook.base.hostVersionCode
 import moe.ore.xposed.hook.enums.QQTypeEnum
+import moe.ore.xposed.utils.Crypter
 import moe.ore.xposed.utils.FuzzySearchClass
 import moe.ore.xposed.utils.GlobalData
 import moe.ore.xposed.utils.HookUtil
 import moe.ore.xposed.utils.HttpUtil
 import moe.ore.xposed.utils.PacketDedupCache
 import moe.ore.xposed.utils.QQ_9_1_90_26520
+import moe.ore.xposed.utils.UnPacket
 import moe.ore.xposed.utils.XPClassloader
 import moe.ore.xposed.utils.hookMethod
 import java.lang.ref.WeakReference
@@ -67,12 +69,11 @@ object MainHook {
         hookTlv()
         hookTea()
         hookSendPacket()
-        hookReceData()
+        if (QQTypeEnum.valueOfPackage(hostPackageName) == QQTypeEnum.QQ && hostVersionCode >= QQ_9_1_90_26520) {
+            hookReceData(true)
+        } else hookReceData(false)
         hookBDH()
         hookParams()
-        if (QQTypeEnum.valueOfPackage(hostPackageName) == QQTypeEnum.QQ && hostVersionCode >= QQ_9_1_90_26520) {
-            hookMSFKernelPacket()
-        }
     }
 
     private fun hookCodecWarpperInit() {
@@ -538,13 +539,49 @@ object MainHook {
         }
     }
 
-    private fun hookReceData() {
+    private fun hookReceData(isEnablePatch: Boolean) {
+        if (isEnablePatch) {
+            CodecWarpper.hookMethod("nativeOnReceData")?.before {
+                val bytes = it.args[0] as ByteArray
+                var length = it.args[1] as Int
+                if (length <= 0) {
+                    length = bytes.size
+                }
+
+                if (length >= 183 && length <= 195) {
+                    // 保险起见限定在183到200之间(183~192)，根据登录状态和账号长度有所波动
+                    val unpack = UnPacket().wrapBytesAddr(bytes)
+                    unpack.skip(10)
+                    val uinLength = unpack.getInt()
+                    unpack.getBytes(uinLength - 4)
+                    val body = unpack.remainingBytes()
+
+                    val debody = Crypter().decrypt(body, ByteArray(16))
+
+                    val unpack2 = UnPacket().wrapBytesAddr(debody)
+                    unpack2.skip(4)
+                    val ssoseq = unpack2.getInt()
+
+                    if (ssoseq == 50001 || ssoseq == 50002 || ssoseq == 50003) {
+                        it.args[0] = (
+                                "000000B70000000A02000000000530E25145277F90045FFE" +
+                                "D09C012F3F97AEEFE40A865C975B7FCC710BE0CF9C739714" +
+                                "0ECA818DDFD9AEE7118B6953D1FF82DDF0BEDFBDB3467919" +
+                                "79FD9665332D89BEAD9483BA1FC68CFE79E7EE9574296FF2" +
+                                "634DDE314BF500C3DDCBD35DC7109B3F0F5CE900A6AFDBAF" +
+                                "69059D0233C52F8FFE81FC5BF9BC6118DC49F0FB9CF47FB0" +
+                                "413DF389C33A855D2E5619E0DA62A3E17BF48A0BEDAB8223" +
+                                "6DB4A93DB5E1766DED8CC233EA7BB7").hex2ByteArray()
+                    }
+                }
+            }
+        }
+
         CodecWarpper.hookMethod("onReceData")?.after {
             val args = it.args
             when (args.size) {
                 1 -> handleReceDataOneArg(args)
-                2 -> handleReceDataTwoArgs(args)
-                3 -> handleReceDataThreeArgs(args)
+                2, 3 -> handleReceDataTwoArgs(args)
                 else -> XposedBridge.log("[TXHook] onReceData 不知道hook到了个不知道什么东西")
             }
         }
@@ -567,15 +604,6 @@ object MainHook {
         sendReceDataToDefaultUri(data, size, stackTrace)
     }
 
-    private fun handleReceDataThreeArgs(args: Array<Any>) {
-        val stackTrace = HookUtil.getFormattedStackTrace()
-
-        val data = args[0] as ByteArray
-        var size = args[1] as Int
-        if (size == 0) size = data.size
-        sendReceDataToDefaultUri(data, size, stackTrace)
-    }
-
     private fun sendReceDataToDefaultUri(data: ByteArray, size: Int, stacktrace: String) {
         val util = ContentValues()
         util.put("data", data.toHexString())
@@ -589,38 +617,50 @@ object MainHook {
         CodecWarpper.hookMethod("encodeRequest")?.after { param ->
             val args = param.args
             when (args.size) {
-                17, 14, 16, 15 -> handleSendPacket(args, param.result as ByteArray)
+                17, 14, 16, 15 -> {
+                    val result = param.result as? ByteArray
+                    handleSendPacket(args, result)
+
+                    /*val cmd = args[5] as? String
+                    XposedBridge.log("[TXHook] encodeRequest: $cmd")
+                    if (cmd != null && cmd.startsWith("PhSigLcId.Check")) {
+                        param.result = Unit
+                    } else {
+                        val result = param.result as? ByteArray
+                        handleSendPacket(args, result)
+                    }*/
+                }
                 else -> XposedBridge.log("[TXHook] encodeRequest 不知道hook到了个不知道什么东西")
             }
         }
     }
 
-    private fun handleSendPacket(args: Array<Any>, result: ByteArray) {
+    private fun handleSendPacket(args: Array<Any>, result: ByteArray?) {
         val stackTrace = HookUtil.getFormattedStackTrace()
 
-        val seq = args[0] as Int
-        val cmd = args[5] as String
+        val seq = args[0] as? Int
+        val cmd = args[5] as? String
         val msgCookie = args[6] as? ByteArray
-        val uin = args[9] as String
+        val uin = args[9] as? String
         val buffer = when (args.size) {
-            17 -> args[15] as ByteArray
-            14 -> args[12] as ByteArray
-            16 -> args[14] as ByteArray
-            15 -> args[13] as ByteArray
+            17 -> args[15] as? ByteArray
+            14 -> args[12] as? ByteArray
+            16 -> args[14] as? ByteArray
+            15 -> args[13] as? ByteArray
             else -> EMPTY_BYTE_ARRAY
         }
         sendSendPacketDataToDefaultUri(uin, seq, cmd, msgCookie, buffer, result, stackTrace)
     }
 
-    private fun sendSendPacketDataToDefaultUri(uin: String, seq: Int, cmd: String, msgCookie: ByteArray?, buffer: ByteArray, result: ByteArray, stacktrace: String) {
+    private fun sendSendPacketDataToDefaultUri(uin: String?, seq: Int?, cmd: String?, msgCookie: ByteArray?, buffer: ByteArray?, result: ByteArray?, stacktrace: String) {
         val util = ContentValues()
-        util.put("uin", uin)
-        util.put("seq", seq)
-        util.put("cmd", cmd)
+        util.put("uin", uin ?: "")
+        util.put("seq", seq ?: 0)
+        util.put("cmd", cmd ?: "")
         util.put("type", "unknown")
         util.put("msgCookie", msgCookie ?: EMPTY_BYTE_ARRAY)
-        util.put("buffer", buffer)
-        util.put("result", result)
+        util.put("buffer", buffer ?: EMPTY_BYTE_ARRAY)
+        util.put("result", result ?: EMPTY_BYTE_ARRAY)
         util.put("mode", MODE_SEND)
         util.put("stacktrace", stacktrace)
         HttpUtil.sendTo(defaultUri, util, source)
