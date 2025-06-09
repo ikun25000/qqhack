@@ -13,3 +13,6 @@ local.properties
 app/build/
 app/release/
 .externalNativeBuild
+/app/app/release/
+/app/app/build/
+/app/app/debug/
