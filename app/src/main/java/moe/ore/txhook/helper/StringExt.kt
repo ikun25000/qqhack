@@ -27,27 +27,19 @@ private val HEX_LOOKUP = IntArray(256) { -1 }.apply {
     for (i in 'a'..'f') this[i.code] = i - 'a' + 10
 }
 
-fun String.hex2ByteArray(): ByteArray {
-    val len = this.length
-    require(len and 1 == 0) { "Hex string length must be even" }
+fun String.hex2ByteArray(stripWhitespace: Boolean = false): ByteArray {
+    val hex = if (stripWhitespace) this.filterNot { it <= ' ' } else this
+    val length = hex.length
+    require(length and 1 == 0) { "Hex string length must be even" }
 
-    val result = ByteArray(len / 2)
+    val result = ByteArray(length shr 1)  // length / 2
     var i = 0
     var j = 0
-    while (i < len) {
-        // Skip whitespace
-        while (i < len && this[i] <= ' ') i++
-        if (i >= len) break
-
-        val c1 = this[i++].code
-        while (i < len && this[i] <= ' ') i++
-        if (i >= len) throw IllegalArgumentException("Odd number of hex digits")
-
-        val c2 = this[i++].code
-        val hi = HEX_LOOKUP[c1]
-        val lo = HEX_LOOKUP[c2]
-        if (hi == -1 || lo == -1) {
-            throw IllegalArgumentException("Invalid hex char: '${this[i - 2]}' or '${this[i - 1]}'")
+    while (i < length) {
+        val hi = HEX_LOOKUP[hex[i++].code]
+        val lo = HEX_LOOKUP[hex[i++].code]
+        if ((hi or lo) < 0) {  // 合并非法字符检查
+            throw IllegalArgumentException("Invalid hex char at pos ${i - 2} or ${i - 1}")
         }
         result[j++] = ((hi shl 4) or lo).toByte()
     }

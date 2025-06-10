@@ -27,7 +27,7 @@ public class HexUtil {
      * 把16进制字符串转换成字节数组
      */
     public static byte[] Hex2Bin(String hex) {
-        return StringExtKt.hex2ByteArray(hex);
+        return StringExtKt.hex2ByteArray(hex, false);
     }
 
     /**

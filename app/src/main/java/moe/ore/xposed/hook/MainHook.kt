@@ -26,7 +26,10 @@ import moe.ore.xposed.utils.PacketDedupCache
 import moe.ore.xposed.utils.QQ_9_1_90_26520
 import moe.ore.xposed.utils.UnPacket
 import moe.ore.xposed.utils.XPClassloader
+import moe.ore.xposed.utils.getPatchBuffer
 import moe.ore.xposed.utils.hookMethod
+import moe.ore.xposed.utils.indexOf
+import moe.ore.xposed.utils.splitPackets
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field
 import java.nio.ByteBuffer
@@ -47,8 +50,11 @@ object MainHook {
     private const val TYPE_NATIVE_SET_ACCOUNT_KEY = "nativeSetAccountKey"
     private const val TYPE_ECDH_DATA = "ecdhData"
 
+    private val tea = Crypter()
+    private var patchCount = 0
     private val defaultUri = DEFAULT_URI.toUri()
     private var isInit: Boolean = false
+    private var isPatchOk: Boolean = false
     private var source = 0
     private val global = GlobalData()
     private val EcdhCrypt = XPClassloader.load("oicq.wlogin_sdk.tools.EcdhCrypt")!!
@@ -58,6 +64,18 @@ object MainHook {
     private val MD5 = XPClassloader.load("oicq.wlogin_sdk.tools.MD5")!!
     private val HighwaySessionData = XPClassloader.load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
     private val MSFKernel = XPClassloader.load("com.tencent.mobileqq.msfcore.MSFKernel")
+
+    private val patchBytes by lazy {
+        return@lazy (
+                "000000B70000000A02000000000530E25145277F90045FFE" +
+                "D09C012F3F97AEEFE40A865C975B7FCC710BE0CF9C739714" +
+                "0ECA818DDFD9AEE7118B6953D1FF82DDF0BEDFBDB3467919" +
+                "79FD9665332D89BEAD9483BA1FC68CFE79E7EE9574296FF2" +
+                "634DDE314BF500C3DDCBD35DC7109B3F0F5CE900A6AFDBAF" +
+                "69059D0233C52F8FFE81FC5BF9BC6118DC49F0FB9CF47FB0" +
+                "413DF389C33A855D2E5619E0DA62A3E17BF48A0BEDAB8223" +
+                "6DB4A93DB5E1766DED8CC233EA7BB7").hex2ByteArray()
+    }
 
     operator fun invoke(source: Int, ctx: Context) {
         HttpUtil.contentResolver = ctx.contentResolver
@@ -539,40 +557,69 @@ object MainHook {
         }
     }
 
+    private fun modifyPacket(packet: ByteArray): ByteArray {
+        val unpack = UnPacket().wrapBytesAddr(packet)
+        unpack.skip(10)
+        val len = unpack.getInt()
+        unpack.getBytes(len - 4)
+        val modified = unpack.remainingBytes()
+
+        val debody = tea.decrypt(modified, ByteArray(16))
+
+        val ssoseq = UnPacket().wrapBytesAddr(debody)
+            .skip(4)
+            .getInt()
+
+        return getPatchBuffer(ssoseq)
+    }
+
     private fun hookReceData(isEnablePatch: Boolean) {
         if (isEnablePatch) {
             CodecWarpper.hookMethod("nativeOnReceData")?.before {
-                val bytes = it.args[0] as ByteArray
-                var length = it.args[1] as Int
-                if (length <= 0) {
-                    length = bytes.size
-                }
+                if (!isPatchOk) {
+                    val bytes = it.args[0] as ByteArray
+                    val packets = splitPackets(bytes)
+                    val modifiedPackets = ArrayList<ByteArray>(packets.size)
+                    val keyword = "PhoneSigLcCheck".toByteArray(Charsets.UTF_8)
 
-                if (length >= 183 && length <= 195) {
-                    // 保险起见限定在183到200之间(183~192)，根据登录状态和账号长度有所波动
-                    val unpack = UnPacket().wrapBytesAddr(bytes)
-                    unpack.skip(10)
-                    val uinLength = unpack.getInt()
-                    unpack.getBytes(uinLength - 4)
-                    val body = unpack.remainingBytes()
+                    packets.forEach { packet ->
+                        val unpack = UnPacket().wrapBytesAddr(packet)
+                        unpack.skip(4)
 
-                    val debody = Crypter().decrypt(body, ByteArray(16))
+                        val packetType = unpack.getInt()
+                        val teaType = unpack.getByte()
 
-                    val unpack2 = UnPacket().wrapBytesAddr(debody)
-                    unpack2.skip(4)
-                    val ssoseq = unpack2.getInt()
+                        if (packetType != 10 || teaType != 0x02.toByte()) {
+                            modifiedPackets.add(packet)
+                            return@forEach
+                        }
 
-                    if (ssoseq == 50001 || ssoseq == 50002 || ssoseq == 50003) {
-                        it.args[0] = (
-                                "000000B70000000A02000000000530E25145277F90045FFE" +
-                                "D09C012F3F97AEEFE40A865C975B7FCC710BE0CF9C739714" +
-                                "0ECA818DDFD9AEE7118B6953D1FF82DDF0BEDFBDB3467919" +
-                                "79FD9665332D89BEAD9483BA1FC68CFE79E7EE9574296FF2" +
-                                "634DDE314BF500C3DDCBD35DC7109B3F0F5CE900A6AFDBAF" +
-                                "69059D0233C52F8FFE81FC5BF9BC6118DC49F0FB9CF47FB0" +
-                                "413DF389C33A855D2E5619E0DA62A3E17BF48A0BEDAB8223" +
-                                "6DB4A93DB5E1766DED8CC233EA7BB7").hex2ByteArray()
+                        unpack.skip(1)
+                        val uinLength = unpack.getInt()
+                        unpack.getBytes(uinLength - 4)
+                        val teaBody = unpack.remainingBytes()
+
+                        val decoded = tea.decrypt(teaBody, ByteArray(16))
+
+                        if (decoded.indexOf(keyword) != -1) {
+                            patchCount++
+                            if (patchCount >= 2) isPatchOk = true
+                            val modifiedPacket = modifyPacket(packet)
+                            modifiedPackets.add(modifiedPacket)
+                        } else {
+                            modifiedPackets.add(packet)
+                        }
                     }
+
+                    val totalSize = modifiedPackets.sumOf { it.size }
+                    val finalBytes = ByteArray(totalSize)
+                    var offset = 0
+                    for (packet in modifiedPackets) {
+                        System.arraycopy(packet, 0, finalBytes, offset, packet.size)
+                        offset += packet.size
+                    }
+
+                    it.args[0] = finalBytes
                 }
             }
         }
