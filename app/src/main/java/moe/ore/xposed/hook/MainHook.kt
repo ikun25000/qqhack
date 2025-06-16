@@ -17,21 +17,18 @@ import moe.ore.xposed.hook.base.hostClassLoader
 import moe.ore.xposed.hook.base.hostPackageName
 import moe.ore.xposed.hook.base.hostVersionCode
 import moe.ore.xposed.hook.enums.QQTypeEnum
-import moe.ore.xposed.utils.Crypter
 import moe.ore.xposed.utils.FuzzySearchClass
 import moe.ore.xposed.utils.GlobalData
 import moe.ore.xposed.utils.HookUtil
 import moe.ore.xposed.utils.HttpUtil
 import moe.ore.xposed.utils.PacketDedupCache
 import moe.ore.xposed.utils.QQ_9_1_90_26520
-import moe.ore.xposed.utils.UnPacket
 import moe.ore.xposed.utils.XPClassloader
 import moe.ore.xposed.utils.getPatchBuffer
 import moe.ore.xposed.utils.hookMethod
-import moe.ore.xposed.utils.indexOf
-import moe.ore.xposed.utils.splitPackets
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.nio.ByteBuffer
 
 object MainHook {
@@ -50,11 +47,8 @@ object MainHook {
     private const val TYPE_NATIVE_SET_ACCOUNT_KEY = "nativeSetAccountKey"
     private const val TYPE_ECDH_DATA = "ecdhData"
 
-    private val tea = Crypter()
-    private var patchCount = 0
     private val defaultUri = DEFAULT_URI.toUri()
     private var isInit: Boolean = false
-    private var isPatchOk: Boolean = false
     private var source = 0
     private val global = GlobalData()
     private val EcdhCrypt = XPClassloader.load("oicq.wlogin_sdk.tools.EcdhCrypt")!!
@@ -65,17 +59,8 @@ object MainHook {
     private val HighwaySessionData = XPClassloader.load("com.tencent.mobileqq.highway.openup.SessionInfo")!!
     private val MSFKernel = XPClassloader.load("com.tencent.mobileqq.msfcore.MSFKernel")
 
-    private val patchBytes by lazy {
-        return@lazy (
-                "000000B70000000A02000000000530E25145277F90045FFE" +
-                "D09C012F3F97AEEFE40A865C975B7FCC710BE0CF9C739714" +
-                "0ECA818DDFD9AEE7118B6953D1FF82DDF0BEDFBDB3467919" +
-                "79FD9665332D89BEAD9483BA1FC68CFE79E7EE9574296FF2" +
-                "634DDE314BF500C3DDCBD35DC7109B3F0F5CE900A6AFDBAF" +
-                "69059D0233C52F8FFE81FC5BF9BC6118DC49F0FB9CF47FB0" +
-                "413DF389C33A855D2E5619E0DA62A3E17BF48A0BEDAB8223" +
-                "6DB4A93DB5E1766DED8CC233EA7BB7").hex2ByteArray()
-    }
+    lateinit var unhook: XC_MethodHook.Unhook
+    val hasUnhook get() = ::unhook.isInitialized
 
     operator fun invoke(source: Int, ctx: Context) {
         HttpUtil.contentResolver = ctx.contentResolver
@@ -87,11 +72,11 @@ object MainHook {
         hookTlv()
         hookTea()
         hookSendPacket()
+        hookBDH()
+        hookParams()
         if (QQTypeEnum.valueOfPackage(hostPackageName) == QQTypeEnum.QQ && hostVersionCode >= QQ_9_1_90_26520) {
             hookReceData(true)
         } else hookReceData(false)
-        hookBDH()
-        hookParams()
     }
 
     private fun hookCodecWarpperInit() {
@@ -557,58 +542,13 @@ object MainHook {
         }
     }
 
-    private fun modifyPacket(packet: ByteArray): ByteArray {
-        val unpack = UnPacket().wrapBytesAddr(packet)
-        unpack.skip(10)
-        val len = unpack.getInt()
-        unpack.getBytes(len - 4)
-        val modified = unpack.remainingBytes()
-
-        val debody = tea.decrypt(modified, ByteArray(16))
-
-        val ssoseq = UnPacket().wrapBytesAddr(debody)
-            .skip(4)
-            .getInt()
-
-        return getPatchBuffer(ssoseq)
-    }
-
     private fun hookReceData(isEnablePatch: Boolean) {
         if (isEnablePatch) {
-            CodecWarpper.hookMethod("nativeOnReceData")?.before {
-                if (!isPatchOk) {
-                    val bytes = it.args[0] as ByteArray
-                    val packets = splitPackets(bytes)
-                    val modifiedPackets = ArrayList<ByteArray>(packets.size)
-                    val keyword = "PhoneSigLcCheck".toByteArray(Charsets.UTF_8)
-
-                    packets.forEach { packet ->
-                        val unpack = UnPacket().wrapBytesAddr(packet)
-                        unpack.skip(4)
-
-                        val packetType = unpack.getInt()
-                        val teaType = unpack.getByte()
-
-                        if (packetType != 10 || teaType != 0x02.toByte()) {
-                            modifiedPackets.add(packet)
-                            return@forEach
-                        }
-
-                        unpack.skip(1)
-                        val uinLength = unpack.getInt()
-                        unpack.getBytes(uinLength - 4)
-                        val teaBody = unpack.remainingBytes()
-
-                        val decoded = tea.decrypt(teaBody, ByteArray(16))
-
-                        if (decoded.indexOf(keyword) != -1) {
-                            patchCount++
-                            if (patchCount >= 2) isPatchOk = true
-                            val modifiedPacket = modifyPacket(packet)
-                            modifiedPackets.add(modifiedPacket)
-                        } else {
-                            modifiedPackets.add(packet)
-                        }
+            val hook = object : XC_MethodHook() {
+                override fun beforeHookedMethod(param: MethodHookParam) {
+                    val modifiedPackets = ArrayList<ByteArray>(2).apply {
+                        add(getPatchBuffer(50001))
+                        add(getPatchBuffer(50002))
                     }
 
                     val totalSize = modifiedPackets.sumOf { it.size }
@@ -619,9 +559,25 @@ object MainHook {
                         offset += packet.size
                     }
 
-                    it.args[0] = finalBytes
+                    if (hasUnhook) unhook.unhook()
+
+                    try {
+                        val method = param.method as Method
+                        method.invoke(param.thisObject, finalBytes, 0)
+                    } catch (e: Throwable) {
+                        XposedBridge.log("[TXHook] nativeOnReceData invoke: $e")
+                    }
+
+                    param.result = Unit
                 }
             }
+
+            unhook = XposedHelpers.findAndHookMethod(
+                CodecWarpper,
+                "nativeOnReceData",
+                ByteArray::class.java, Int::class.java,
+                hook)
+
         }
 
         CodecWarpper.hookMethod("onReceData")?.after {
@@ -667,15 +623,6 @@ object MainHook {
                 17, 14, 16, 15 -> {
                     val result = param.result as? ByteArray
                     handleSendPacket(args, result)
-
-                    /*val cmd = args[5] as? String
-                    XposedBridge.log("[TXHook] encodeRequest: $cmd")
-                    if (cmd != null && cmd.startsWith("PhSigLcId.Check")) {
-                        param.result = Unit
-                    } else {
-                        val result = param.result as? ByteArray
-                        handleSendPacket(args, result)
-                    }*/
                 }
                 else -> XposedBridge.log("[TXHook] encodeRequest 不知道hook到了个不知道什么东西")
             }

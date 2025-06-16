@@ -17,6 +17,7 @@ import moe.ore.xposed.hook.base.hostAndroidId
 import moe.ore.xposed.hook.base.hostApp
 import moe.ore.xposed.hook.base.hostAppName
 import moe.ore.xposed.hook.base.hostClassLoader
+import moe.ore.xposed.hook.base.hostInit
 import moe.ore.xposed.hook.base.hostPackageName
 import moe.ore.xposed.hook.base.hostProcessName
 import moe.ore.xposed.hook.base.hostVersionCode
@@ -31,13 +32,6 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 internal class HookEntry: IXposedHookLoadPackage, IXposedHookZygoteInit {
-    companion object {
-        @JvmStatic
-        var sec_static_stage_inited = false
-    }
-
-    private var firstStageInit = false
-
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         if (QQTypeEnum.contain(lpparam.packageName)) {
             if (QQTypeEnum.valueOfPackage(lpparam.packageName) != QQTypeEnum.TXHook) {
@@ -59,7 +53,8 @@ internal class HookEntry: IXposedHookLoadPackage, IXposedHookZygoteInit {
     }
 
     private fun entryMQQ(source: Int, loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        if (firstStageInit) return
+        if (hostInit && !ProcUtil.isMain && ProcUtil.isMsf) return
+
         val startup = afterHook(50) { param ->
             try {
                 val loader = param.thisObject.javaClass.classLoader!!
@@ -104,7 +99,6 @@ internal class HookEntry: IXposedHookLoadPackage, IXposedHookZygoteInit {
                 .forEach {
                     XposedBridge.hookMethod(it, startup)
                 }
-            firstStageInit = true
         } else {
             try {
                 val loadDex = loadPackageParam.classLoader.loadClass("com.tencent.mobileqq.startup.step.LoadDex")
@@ -113,8 +107,7 @@ internal class HookEntry: IXposedHookLoadPackage, IXposedHookZygoteInit {
                     .forEach {
                         XposedBridge.hookMethod(it, startup)
                     }
-                firstStageInit = true
-            } catch (e: ClassNotFoundException) {
+            } catch (_: ClassNotFoundException) {
                 val fieldList = arrayListOf<Field>()
                 FuzzySearchClass.findAllClassByField(loadPackageParam.classLoader, "com.tencent.mobileqq.startup.task.config") { _, field ->
                     (field.type == HashMap::class.java || field.type == Map::class.java) && Modifier.isStatic(field.modifiers)
@@ -139,62 +132,18 @@ internal class HookEntry: IXposedHookLoadPackage, IXposedHookZygoteInit {
                         }
                     }
                 }
-                firstStageInit = true
             }
         }
     }
 
     private fun execStartupInit(source: Int, ctx: Context) {
-        if (sec_static_stage_inited) return
-
         val classLoader = ctx.classLoader.also { requireNotNull(it) }
         XPClassloader.hostClassLoader = classLoader
 
-        if (injectClassloader(HookEntry::class.java.classLoader)) {
-            if ("1" != System.getProperty("hook_flag")) {
-                System.setProperty("hook_flag", "1")
-            } else return
-
-            if (ProcUtil.isMsf) {
-                AntiDetection()
-                MainHook(source, ctx)
-                sec_static_stage_inited = true
-            }
+        if (ProcUtil.isMsf) {
+            AntiDetection()
+            MainHook(source, ctx)
         }
-    }
-
-    private fun injectClassloader(moduleLoader: ClassLoader?): Boolean {
-        if (moduleLoader != null) {
-            if (kotlin.runCatching {
-                    moduleLoader.loadClass("mqq.app.MobileQQ")
-                }.isSuccess) {
-                XposedBridge.log("[TXHook] ModuleClassloader already injected.")
-                return true
-            }
-
-            val parent = moduleLoader.parent
-            val field = ClassLoader::class.java.declaredFields
-                .first { it.name == "parent" }
-            field.isAccessible = true
-
-            field.set(XPClassloader, parent)
-
-            if (XPClassloader.load("mqq.app.MobileQQ") == null) {
-                XposedBridge.log("[TXHook]XPClassloader init failed.")
-                return false
-            }
-
-            field.set(moduleLoader, XPClassloader)
-
-            return kotlin.runCatching {
-                Class.forName("mqq.app.MobileQQ")
-            }.onFailure {
-                XposedBridge.log("[TXHook] Classloader inject failed.")
-            }.onSuccess {
-                XposedBridge.log("[TXHook] Classloader inject successfully.")
-            }.isSuccess
-        }
-        return false
     }
 
     override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam?) {
