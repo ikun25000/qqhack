@@ -5,6 +5,8 @@
  
 ---
 
+**我们始终推荐在Actions下载最新构建版本，Releases可能更新不及时。[点我前往Actions](https://github.com/callng/QQHook/actions/workflows/build_ci.yml)**
+
 ## 😄 状态
 
 **⚠️~~注意，从9.1.90(versionCode>=10248)及以上的版本开始将无法获取到完整的数据包内容~~**
