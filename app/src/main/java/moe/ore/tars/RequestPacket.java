@@ -32,7 +32,7 @@ public final class RequestPacket extends TarsBase {
         if (cache_buffer == null) {
             cache_buffer = new byte[1];
         }
-        this.buffer = (byte[]) tarsInputStream.read(cache_buffer, 7, false);
+        this.buffer = tarsInputStream.read(cache_buffer, 7, false);
         this.timeout = tarsInputStream.read(this.timeout, 8, false);
         if (cache_context == null) {
             HashMap hashMap = new HashMap();
@@ -71,47 +71,47 @@ public final class RequestPacket extends TarsBase {
         }
     }
 
-    public final byte getPacketType() {
+    public byte getPacketType() {
         return this.packetType;
     }
 
-    public final void setPacketType(byte b) {
+    public void setPacketType(byte b) {
         this.packetType = b;
     }
 
-    public final int getMessageType() {
+    public int getMessageType() {
         return this.messageType;
     }
 
-    public final void setMessageType(int i) {
+    public void setMessageType(int i) {
         this.messageType = i;
     }
 
-    public final int getRequestId() {
+    public int getRequestId() {
         return this.requestId;
     }
 
-    public final void setRequestId(int i) {
+    public void setRequestId(int i) {
         this.requestId = i;
     }
 
-    public final int getTimeout() {
+    public int getTimeout() {
         return this.timeout;
     }
 
-    public final void setTimeout(int i) {
+    public void setTimeout(int i) {
         this.timeout = i;
     }
 
-    public final int getVersion() {
+    public int getVersion() {
         return this.version;
     }
 
-    public final void setVersion(int i) {
+    public void setVersion(int i) {
         this.version = i;
     }
 
-    public final byte[] getBuffer() {
+    public byte[] getBuffer() {
         byte[] bArr = this.buffer;
         if (bArr != null) {
             return bArr;
@@ -120,13 +120,13 @@ public final class RequestPacket extends TarsBase {
         throw null;
     }
 
-    public final void setBuffer(@NotNull byte[] bArr) {
+    public void setBuffer(@NotNull byte[] bArr) {
         Intrinsics.checkNotNullParameter(bArr, "<set-?>");
         this.buffer = bArr;
     }
 
     @NotNull
-    public final String getFuncName() {
+    public String getFuncName() {
         String str = this.funcName;
         if (str != null) {
             return str;
@@ -135,13 +135,13 @@ public final class RequestPacket extends TarsBase {
         throw null;
     }
 
-    public final void setFuncName(@NotNull String str) {
+    public void setFuncName(@NotNull String str) {
         Intrinsics.checkNotNullParameter(str, "<set-?>");
         this.funcName = str;
     }
 
     @NotNull
-    public final String getServantName() {
+    public String getServantName() {
         String str = this.servantName;
         if (str != null) {
             return str;
@@ -150,13 +150,13 @@ public final class RequestPacket extends TarsBase {
         throw null;
     }
 
-    public final void setServantName(@NotNull String str) {
+    public void setServantName(@NotNull String str) {
         Intrinsics.checkNotNullParameter(str, "<set-?>");
         this.servantName = str;
     }
 
     @NotNull
-    public final Map<String, String> getStatus() {
+    public Map<String, String> getStatus() {
         Map<String, String> map = this.status;
         if (map != null) {
             return map;
@@ -165,13 +165,13 @@ public final class RequestPacket extends TarsBase {
         throw null;
     }
 
-    public final void setStatus(@NotNull Map<String, String> map) {
+    public void setStatus(@NotNull Map<String, String> map) {
         Intrinsics.checkNotNullParameter(map, "<set-?>");
         this.status = map;
     }
 
     @NotNull
-    public final Map<String, String> getContext() {
+    public Map<String, String> getContext() {
         Map<String, String> map = this.context;
         if (map != null) {
             return map;
@@ -180,7 +180,7 @@ public final class RequestPacket extends TarsBase {
         throw null;
     }
 
-    public final void setContext(@NotNull Map<String, String> map) {
+    public void setContext(@NotNull Map<String, String> map) {
         Intrinsics.checkNotNullParameter(map, "<set-?>");
         this.context = map;
     }

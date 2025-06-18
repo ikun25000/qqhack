@@ -138,8 +138,7 @@ public class ProtocolViewer extends RecyclerView {
     }
 
     private void loop(View view, float textSize) {
-        if (view instanceof JsonItemView) {
-            JsonItemView group = (JsonItemView) view;
+        if (view instanceof JsonItemView group) {
 
             group.setTextSize(textSize);
 
@@ -165,7 +164,7 @@ public class ProtocolViewer extends RecyclerView {
         return (float) Math.sqrt(x * x + y * y);
     }
 
-    private OnItemTouchListener touchListener = new OnItemTouchListener() {
+    private final OnItemTouchListener touchListener = new OnItemTouchListener() {
         @Override
         public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent event) {
             switch (event.getAction() & event.getActionMasked()) {

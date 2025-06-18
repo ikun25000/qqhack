@@ -21,13 +21,29 @@
 
 package moe.ore.txhook.helper
 
-fun String.hex2ByteArray(): ByteArray {
-    val s = this.replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "")
-    val bs = ByteArray(s.length / 2)
-    for (i in 0 until s.length / 2) {
-        bs[i] = s.substring(i * 2, i * 2 + 2).toInt(16).toByte()
+private val HEX_LOOKUP = IntArray(256) { -1 }.apply {
+    for (i in '0'..'9') this[i.code] = i - '0'
+    for (i in 'A'..'F') this[i.code] = i - 'A' + 10
+    for (i in 'a'..'f') this[i.code] = i - 'a' + 10
+}
+
+fun String.hex2ByteArray(stripWhitespace: Boolean = false): ByteArray {
+    val hex = if (stripWhitespace) this.filterNot { it <= ' ' } else this
+    val length = hex.length
+    require(length and 1 == 0) { "Hex string length must be even" }
+
+    val result = ByteArray(length shr 1)  // length / 2
+    var i = 0
+    var j = 0
+    while (i < length) {
+        val hi = HEX_LOOKUP[hex[i++].code]
+        val lo = HEX_LOOKUP[hex[i++].code]
+        if ((hi or lo) < 0) {  // 合并非法字符检查
+            throw IllegalArgumentException("Invalid hex char at pos ${i - 2} or ${i - 1}")
+        }
+        result[j++] = ((hi shl 4) or lo).toByte()
     }
-    return bs
+    return result
 }
 
 fun String.ipToLong() : Int = IpUtil.ip_to_int(this)

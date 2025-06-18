@@ -37,38 +37,13 @@
                 tools:ignore="RtlHardcoded,RtlSymmetry" />
         </LinearLayout>
 
-        <com.czm.settingview.SettingView
+        <moe.ore.txhook.custom.SettingView
             android:id="@+id/push_api"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:leftText="是否开启PUSH"
             app:rightStyle="iconSwitch"
             android:paddingBottom="8dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/bdh_setting"
-            android:textStyle="bold"
-            android:textColor="@color/accent"
-            android:paddingTop="16dp"
-            android:paddingBottom="8dp" />
-
-        <com.czm.settingview.SettingView
-            android:id="@+id/forbidTcp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:leftText="强制使用TCP上传数据"
-            app:rightStyle="iconCheck"
-            android:paddingBottom="8dp" />
-
-        <com.czm.settingview.SettingView
-            android:id="@+id/claer_cache"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:leftText="清理缓存"
-            app:rightStyle="iconShow" />
-
     </LinearLayout>
 
 </ScrollView>

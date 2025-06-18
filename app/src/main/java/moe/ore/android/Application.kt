@@ -13,11 +13,9 @@ class Application: android.app.Application() {
 
     override fun onCreate() {
         super.onCreate()
-
+        AndroKtx.init(this)
         locale = Locale.getDefault()
         defaultLocale = Locale.getDefault()
-
-        AndroKtx.init(this)
     }
 
     companion object {

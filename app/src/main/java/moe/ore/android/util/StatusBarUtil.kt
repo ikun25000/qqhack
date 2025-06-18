@@ -19,7 +19,7 @@ object StatusBarUtil {
         }
         // 华为,OPPO机型在StatusBarUtil.setLightStatusBar后布局被顶到状态栏上去了
         // 华为,OPPO机型在StatusBarUtil.setLightStatusBar后布局被顶到状态栏上去了
-        val content = (activity.findViewById(R.id.content) as ViewGroup).getChildAt(0)
+        val content = (activity.findViewById<ViewGroup>(R.id.content)!!).getChildAt(0)
         if (content != null && !isUseFullScreenMode) {
             content.fitsSystemWindows = true
         }

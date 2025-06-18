@@ -247,7 +247,7 @@ public class TarsParser {
 
                 return new String(ss, sServerEncoding);
             case 8: {
-                int size = read((int)0, 0, true);
+                int size = read(0, 0, true);
                 if (size < 0)
                     throw new TarsDecodeException("size is < 0 " + size);
 
@@ -277,7 +277,7 @@ public class TarsParser {
             }
             case 9: {
                 NewJsonObject jsonObject = new NewJsonObject();
-                int size = read((int)0, 0, true);
+                int size = read(0, 0, true);
                 if (size < 0) throw new TarsDecodeException("size invalid: " + size);
                 for (int i = 0; i < size; ++i) {
 

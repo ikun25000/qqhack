@@ -42,6 +42,8 @@
 
 package moe.ore.tars;
 
+import androidx.annotation.OptIn;
+
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -49,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 
 import kotlinx.io.core.BytePacketBuilder;
+import kotlinx.io.core.internal.DangerousInternalIoApi;
 import moe.ore.tars.exc.TarsEncodeException;
 import moe.ore.txhook.helper.BytePacketExtKt;
 import moe.ore.txhook.helper.StringExtKt;
@@ -72,6 +75,7 @@ public class TarsOutputStream {
     }
 
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void writeHead(byte type, int tag) {
         if (tag < 15) {
             byte b = (byte) ((tag << 4) | type);
@@ -93,6 +97,7 @@ public class TarsOutputStream {
         write(by, tag);
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(byte b, int tag) {
         if (b == 0) {
             writeHead(TarsBase.ZERO_TAG, tag);
@@ -103,6 +108,7 @@ public class TarsOutputStream {
         }
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(short n, int tag) {
         if (n >= Byte.MIN_VALUE && n <= Byte.MAX_VALUE) {
             write((byte) n, tag);
@@ -112,6 +118,7 @@ public class TarsOutputStream {
         }
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(int n, int tag) {
         if (n >= Short.MIN_VALUE && n <= Short.MAX_VALUE) {
             write((short) n, tag);
@@ -121,6 +128,7 @@ public class TarsOutputStream {
         }
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(long n, int tag) {
         if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
             write((int) n, tag);
@@ -130,18 +138,21 @@ public class TarsOutputStream {
         }
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(float n, int tag) {
         writeHead(TarsBase.FLOAT, tag);
         bs.writeFloat(n);
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(double n, int tag) {
         writeHead(TarsBase.DOUBLE, tag);
         bs.writeDouble(n);
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void writeStringByte(String s, int tag) {
-        byte[] by = StringExtKt.hex2ByteArray(s);
+        byte[] by = StringExtKt.hex2ByteArray(s, false);
         if (by.length > 255) {
             writeHead(TarsBase.STRING4, tag);
             bs.writeInt(by.length);
@@ -152,8 +163,9 @@ public class TarsOutputStream {
         BytePacketExtKt.writeBytes(this.bs, by);
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void writeByteString(String s, int tag) {
-        byte[] by = StringExtKt.hex2ByteArray(s);
+        byte[] by = StringExtKt.hex2ByteArray(s, false);
         if (by.length > 255) {
             writeHead(TarsBase.STRING4, tag);
             bs.writeInt(by.length);
@@ -164,6 +176,7 @@ public class TarsOutputStream {
         BytePacketExtKt.writeBytes(this.bs, by);
     }
 
+    @OptIn(markerClass = DangerousInternalIoApi.class)
     public void write(String s, int tag) {
         byte[] by;
         by = s.getBytes(sServerEncoding);

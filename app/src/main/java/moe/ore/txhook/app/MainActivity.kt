@@ -28,7 +28,6 @@ import moe.ore.txhook.EntryActivity
 import moe.ore.txhook.R
 import moe.ore.txhook.app.fragment.MainFragment
 import moe.ore.txhook.app.fragment.SettingFragment
-import moe.ore.txhook.common.ModeleStatus
 import moe.ore.txhook.databinding.ActivityMainBinding
 
 class MainActivity: EasyActivity() {
@@ -68,7 +67,7 @@ class MainActivity: EasyActivity() {
         val toolbar = binding.toolbar
         toolbar.setTitleTextColor(selectedColor)
         toolbar.setSubtitleTextColor(selectedColor)
-        toolbar.subtitle = if (ModeleStatus.isModuleActivated()) "模块已激活" else "模块未激活"
+        toolbar.subtitle = getString(R.string.imqq)
         setSupportActionBar(toolbar)
 
         mFragmentList.add(MainFragment())
