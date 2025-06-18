@@ -9,9 +9,8 @@ import java.util.Locale
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    kotlin("plugin.serialization") version "2.1.21"
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 
 val appVerCode: Int by lazy {
@@ -182,21 +181,20 @@ fun getSignatureKeyDigest(signConfig: ApkSigningConfig?): String? {
 }
 
 dependencies {
-    compileOnly("de.robv.android.xposed:api:82")
+    compileOnly(libs.xposed.api)
 
-    implementation("com.google.code.gson:gson:2.13.1")
-    implementation("com.google.protobuf:protobuf-java:4.31.1")
-
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-io-jvm:0.1.16")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.8.1")
-
-    implementation("com.rengwuxian.materialedittext:library:2.1.4")
-
-    implementation("androidx.recyclerview:recyclerview:1.4.0")
-    implementation("androidx.core:core-ktx:1.16.0")
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation(libs.android.material)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.ezxhelper.android.utils)
+    implementation(libs.ezxhelper.core)
+    implementation(libs.ezxhelper.xposed.api)
+    implementation(libs.google.gson)
+    implementation(libs.google.protobuf)
+    implementation(libs.kotlinx.io.jvm)
+    implementation(libs.kotlinx.serialization.protobuf)
+    implementation(libs.materialedittext.library)
+    implementation(libs.okhttp3.okhttp)
 }
