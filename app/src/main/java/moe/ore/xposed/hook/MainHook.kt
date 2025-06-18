@@ -546,12 +546,12 @@ object MainHook {
         if (isEnablePatch) {
             val hook = object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
-                    val modifiedPackets = ArrayList<ByteArray>(2).apply {
-                        add(getPatchBuffer(50000))
+                    val modifiedPackets = ArrayList<ByteArray>(5).apply {
                         add(getPatchBuffer(50001))
                         add(getPatchBuffer(50002))
                         add(getPatchBuffer(50003))
                         add(getPatchBuffer(50004))
+                        add(getPatchBuffer(50005))
                     }
 
                     val totalSize = modifiedPackets.sumOf { it.size }
