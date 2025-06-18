@@ -42,3 +42,15 @@
 -keepclassmembers class * {
     static ** CREATOR;
 }
+
+-keep @interface moe.ore.xposed.base.MethodHook
+-keepclassmembers class * {
+    @moe.ore.xposed.base.MethodHook *;
+}
+
+-obfuscationdictionary obf-dict.txt
+-classobfuscationdictionary obf-dict.txt
+-packageobfuscationdictionary obf-dict.txt
+-repackageclasses ''
+-allowaccessmodification
+-overloadaggressively

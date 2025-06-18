@@ -20,13 +20,12 @@ val appVerName: String = "3.2.2" + ".r${getGitCommitCount()}." + getVersionName(
 
 android {
     namespace = "moe.ore.txhook"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "moe.ore.txhook"
         minSdk = 24
-        //noinspection ExpiredTargetSdkVersion
-        targetSdk = 29
+        targetSdk = 36
         versionCode = appVerCode
         versionName = appVerName
     }
@@ -182,7 +181,6 @@ fun getSignatureKeyDigest(signConfig: ApkSigningConfig?): String? {
 
 dependencies {
     compileOnly(libs.xposed.api)
-
     implementation(libs.android.material)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)

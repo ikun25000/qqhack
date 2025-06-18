@@ -1,37 +1,42 @@
 package moe.ore.xposed.utils
 
-import moe.ore.xposed.hook.config.PACKAGE_NAME_QQ
-
 object XPClassloader: ClassLoader() {
     lateinit var hostClassLoader: ClassLoader
     lateinit var ctxClassLoader: ClassLoader
 
     fun load(name: String): Class<*>? {
-        return kotlin.runCatching {
+        return runCatching {
             loadClass(name)
         }.getOrNull()
     }
 
-    override fun loadClass(name: String?): Class<*>? {
-        if (name.isNullOrEmpty()) return null
-
-        var processedClassName = name.replace('/', '.')
-        if (processedClassName.startsWith("L") && processedClassName.endsWith(";")) {
-            processedClassName = processedClassName.substring(1, processedClassName.length - 1)
-        } else if (processedClassName.endsWith(";")) {
-            processedClassName = processedClassName.substring(0, processedClassName.length - 1)
+    private fun getSimpleName(className: String): String {
+        var name = className
+        if (name.startsWith('L') && name.endsWith(';') || name.contains('/')) {
+            var flag = 0
+            if (name.startsWith('L')) {
+                flag = flag or (1 shl 1)
+            }
+            if (name.endsWith(';')) {
+                flag = flag or 1
+            }
+            if (flag > 0) {
+                name = name.substring(flag shr 1, name.length - (flag and 1))
+            }
+            name = name.replace('/', '.')
         }
-        if (processedClassName.startsWith(".")) {
-            processedClassName = PACKAGE_NAME_QQ + processedClassName
-        }
+        return name
+    }
 
-        return kotlin.runCatching {
-            hostClassLoader.loadClass(processedClassName)
+    override fun loadClass(className: String): Class<*>? {
+        val name = getSimpleName(className)
+        return runCatching {
+            hostClassLoader.loadClass(name)
         }.getOrElse {
-            kotlin.runCatching {
-                ctxClassLoader.loadClass(processedClassName)
+            runCatching {
+                ctxClassLoader.loadClass(name)
             }.getOrElse {
-                super.loadClass(processedClassName)
+                super.loadClass(name)
             }
         }
     }
